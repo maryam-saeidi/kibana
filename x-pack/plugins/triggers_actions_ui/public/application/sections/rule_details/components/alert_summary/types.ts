@@ -11,9 +11,10 @@ export interface RuleAlertsSummaryProps {
   rule: Rule;
   filteredRuleTypes: string[];
 }
+
 export interface AlertChartData {
-  status: 'active' | 'recovered' | 'total';
-  count: number;
+  active: number;
+  recovered: number;
   date: number;
 }
 

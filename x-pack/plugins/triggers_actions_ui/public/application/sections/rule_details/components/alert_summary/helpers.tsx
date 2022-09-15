@@ -6,16 +6,22 @@
  */
 
 import { LIGHT_THEME, XYChartSeriesIdentifier } from '@elastic/charts';
-import { AlertChartData } from './types';
+// import { AlertChartData } from './types';
 
-export const formatChartAlertData = (
-  data: AlertChartData[]
-): Array<{ x: number; y: number; g: string }> =>
-  data.map((alert) => ({
-    x: alert.date,
-    y: alert.count,
-    g: alert.status,
-  }));
+// export const formatChartAlertData = (
+//   data: AlertChartData[]
+// ): Array<{ x: number; y: number; g: string }> => {
+//   return data
+//     .filter((alert) => alert.status === 'recovered')
+//     .map((alert) =>
+//       alert.status === 'active' ? alert : { status: alert.status, count: 0, date: alert.date }
+//     )
+//     .map((alert) => ({
+//       x: alert.date,
+//       y: alert.count,
+//       g: alert.status,
+//     }));
+// };
 
 export const getColorSeries = ({ seriesKeys }: XYChartSeriesIdentifier) => {
   switch (seriesKeys[0]) {

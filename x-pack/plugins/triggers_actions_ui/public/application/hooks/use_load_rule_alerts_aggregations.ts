@@ -239,34 +239,19 @@ export async function fetchRuleAlertsAggByTimeRange({
             };
           }
         ) => {
-          // We are adding this to each day to construct the 30 days bars (background bar) when there is no data for a given day or to show the delta today alerts/total alerts.
-          const totalDayAlerts = {
+          const oneDayAlertChartData: AlertChartData = {
+            active: 0,
+            recovered: 0,
             date: dayAlerts.key,
-            count: maxTotalAlertPerDay === 0 ? 1 : maxTotalAlertPerDay,
-            status: 'total',
           };
+          const localAlertChartData = acc;
 
-          if (dayAlerts.doc_count > 0) {
-            const localAlertChartData = acc;
-            // If there are alerts in this day, we construct the chart data
-            dayAlerts.alertStatus.buckets.forEach((alert) => {
-              localAlertChartData.push({
-                date: dayAlerts.key,
-                count: alert.doc_count,
-                status: alert.key,
-              });
-            });
-            const deltaAlertsCount = maxTotalAlertPerDay - dayAlerts.doc_count;
-            if (deltaAlertsCount > 0) {
-              localAlertChartData.push({
-                date: dayAlerts.key,
-                count: deltaAlertsCount,
-                status: 'total',
-              });
-            }
-            return localAlertChartData;
-          }
-          return [...acc, totalDayAlerts];
+          dayAlerts.alertStatus.buckets.forEach((alert) => {
+            oneDayAlertChartData[alert.key] = alert.doc_count;
+          });
+
+          localAlertChartData.push(oneDayAlertChartData);
+          return localAlertChartData;
         },
         []
       ),
@@ -274,11 +259,7 @@ export async function fetchRuleAlertsAggByTimeRange({
     return {
       active,
       recovered,
-      alertsChartData: [
-        ...alertsChartData.filter((acd) => acd.status === 'recovered'),
-        ...alertsChartData.filter((acd) => acd.status === 'active'),
-        ...alertsChartData.filter((acd) => acd.status === 'total'),
-      ],
+      alertsChartData,
     };
   } catch (error) {
     return {
