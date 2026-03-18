@@ -10,7 +10,7 @@
 import { LegendLayout, LegendSize, type XYLegendValue } from '@kbn/chart-expressions-common';
 import type { XYState as XYLensState } from '@kbn/lens-common';
 import type { XYState } from '../../../schema';
-import { stripUndefined } from '../utils';
+import { getLegendTruncateAfterLines, stripUndefined } from '../utils';
 
 type OutsideLegendType = Extract<Required<XYState['legend']>, { inside: false }>;
 type StatisticsType = NonNullable<NonNullable<XYState['legend']>['statistics']>[number];
@@ -271,7 +271,7 @@ export function convertLegendToAPIFormat(
         ...baseOutside,
         layout: {
           type: 'grid' as const,
-          truncate: { max_lines: legend.maxLines },
+          truncate: { max_lines: getLegendTruncateAfterLines(legend) },
         },
       },
     };
