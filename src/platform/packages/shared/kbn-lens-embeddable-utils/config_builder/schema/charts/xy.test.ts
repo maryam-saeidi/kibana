@@ -10,6 +10,12 @@
 import { statisticsOptionsSize, statisticsSchema, xyStateSchema } from './xy';
 
 describe('XY', () => {
+  const minimalLayer = {
+    dataset: { type: 'dataView', id: 'myDataView' as const },
+    type: 'bar' as const,
+    y: [{ operation: 'count' as const }],
+  };
+
   const universalTypes = [
     'bar',
     'line',
@@ -502,6 +508,84 @@ describe('XY', () => {
           ],
         })
       ).toThrow();
+    });
+
+    it('should reject list legend layout for left/right positions', () => {
+      expect(() =>
+        xyStateSchema.validate({
+          type: 'xy',
+          title: 'Invalid list legend position',
+          legend: {
+            visibility: 'visible',
+            position: 'left',
+            layout: {
+              type: 'list',
+              truncate: {
+                max_pixels: 300,
+              },
+            },
+          },
+          layers: [minimalLayer],
+        })
+      ).toThrow(
+        '[legend]: types that failed validation:\n' +
+          '- [legend.0.position]: types that failed validation:\n' +
+          ' - [legend.position.0]: expected value to equal [top]\n' +
+          ' - [legend.position.1]: expected value to equal [bottom]\n' +
+          '- [legend.1.layout.type]: expected value to equal [grid]\n' +
+          '- [legend.2.inside]: expected value to equal [true]'
+      );
+    });
+
+    it('should not allow both truncation values at the same time', () => {
+      expect(() =>
+        xyStateSchema.validate({
+          type: 'xy',
+          title: 'Valid list legend truncation',
+          legend: {
+            visibility: 'visible',
+            position: 'bottom',
+            layout: {
+              type: 'list',
+              truncate: {
+                after_lines: 2,
+                max_pixels: 320,
+              },
+            },
+          },
+          layers: [minimalLayer],
+        })
+      ).toThrow(
+        // TODO: Improve validation
+        '[legend]: types that failed validation:\n' +
+          '- [legend.0.layout]: types that failed validation:\n' +
+          ' - [legend.layout.0.type]: expected value to equal [grid]\n' +
+          ' - [legend.layout.1.truncate.after_lines]: definition for this key is missing\n' +
+          '- [legend.1.layout.type]: expected value to equal [grid]\n' +
+          '- [legend.2.inside]: expected value to equal [true]'
+      );
+    });
+  });
+
+  describe('legend layout schema', () => {
+    it('should allow list legend layout for top/bottom with truncate.max_pixels', () => {
+      expect(() =>
+        xyStateSchema.validate({
+          type: 'xy',
+          title: 'Valid list legend',
+          legend: {
+            visibility: 'visible',
+            position: 'bottom',
+            layout: {
+              type: 'list',
+              truncate: {
+                max_pixels: 320,
+              },
+            },
+          },
+          layers: [minimalLayer],
+        })
+      ).not.toThrow();
     });
   });
 

@@ -13,8 +13,7 @@ import type { XYState } from '../../../schema';
 import { stripUndefined } from '../utils';
 
 type OutsideLegendType = Extract<Required<XYState['legend']>, { inside: false }>;
-
-type StatisticsType = OutsideLegendType['statistics'][number];
+type StatisticsType = NonNullable<NonNullable<XYState['legend']>['statistics']>[number];
 
 const StatsAPIToOldState = {
   avg: 'average',
@@ -64,6 +63,33 @@ function mapStatToSnakeCase(stat: XYLegendValue): StatisticsType {
 
 const DEFAULT_LEGEND_POSITON = 'right';
 
+function isOutsideListLegendLayout(legend: XYState['legend']) {
+  return Boolean(
+    legend &&
+      !legend.inside &&
+      'layout' in legend &&
+      legend.layout?.type === 'list' &&
+      'position' in legend &&
+      (legend.position === 'top' || legend.position === 'bottom')
+  );
+}
+function isOutsideListLegendLayoutState(legend: XYLensState['legend']) {
+  return Boolean(
+    !isLegendInside(legend) &&
+      legend.layout === LegendLayout.List &&
+      (legend.position === 'top' || legend.position === 'bottom')
+  );
+}
+
+function isVerticalPosition(legend: XYState['legend']): boolean {
+  return Boolean(
+    legend &&
+      !legend.inside &&
+      'position' in legend &&
+      (legend.position === 'left' || legend.position === 'right')
+  );
+}
+
 function extractAlignment(legend: XYState['legend']):
   | {
       verticalAlignment: 'top' | 'bottom' | undefined;
@@ -97,13 +123,30 @@ function getLegendSize(
   }
 }
 
+function getLegendTruncation(legend: XYState['legend']): {
+  max_lines?: number;
+  max_pixels?: number;
+} | null {
+  return legend && 'layout' in legend && legend.layout?.truncate ? legend.layout.truncate : null;
+}
+
+function getOutsideLegendSize(
+  legend: XYState['legend']
+): 'small' | 'medium' | 'large' | 'xlarge' | undefined {
+  return legend && 'size' in legend ? legend.size : undefined;
+}
+
 export function convertLegendToStateFormat(legend: XYState['legend']): {
   legend: XYLensState['legend'];
 } {
+  const isListLegendLayout = isOutsideListLegendLayout(legend);
+  const legendTruncation = getLegendTruncation(legend);
+  const truncateMaxLines = legendTruncation?.max_lines;
+  const truncateMaxPixels = legendTruncation?.max_pixels;
+  const outsideLegendSize = getOutsideLegendSize(legend);
   const newStateLegend: XYLensState['legend'] = {
     isVisible: legend?.visibility === 'auto' || legend?.visibility === 'visible',
-    shouldTruncate: Boolean(legend?.truncate_after_lines), // 0 will be interpreted as false
-    ...(legend?.truncate_after_lines ? { maxLines: legend?.truncate_after_lines } : {}),
+    shouldTruncate: Boolean(truncateMaxLines || truncateMaxPixels), // 0 will be interpreted as false
     ...(legend?.statistics
       ? { legendStats: (legend?.statistics ?? []).map(mapStatToCamelCase) }
       : {}),
@@ -115,10 +158,23 @@ export function convertLegendToStateFormat(legend: XYState['legend']): {
           position: DEFAULT_LEGEND_POSITON,
           ...(legend?.columns ? { floatingColumns: legend?.columns } : {}),
         }
+      : isVerticalPosition(legend)
+      ? {
+          position: legend?.position ?? DEFAULT_LEGEND_POSITON,
+          legendSize: outsideLegendSize ? getLegendSize(outsideLegendSize) : LegendSize.AUTO,
+          ...(!isListLegendLayout && truncateMaxLines ? { maxLines: truncateMaxLines } : {}),
+        }
       : {
           position: legend?.position ?? DEFAULT_LEGEND_POSITON,
-          legendSize: legend?.size ? getLegendSize(legend.size) : LegendSize.AUTO,
-          ...(legend?.layout === 'list' ? { layout: LegendLayout.List } : {}),
+          legendSize: outsideLegendSize ? getLegendSize(outsideLegendSize) : LegendSize.AUTO,
+          ...(isListLegendLayout
+            ? {
+                layout: LegendLayout.List,
+                ...(truncateMaxPixels != null ? { listLayoutMaxWidth: truncateMaxPixels } : {}),
+              }
+            : truncateMaxLines
+            ? { maxLines: truncateMaxLines }
+            : {}),
         }),
   };
 
@@ -164,32 +220,62 @@ function getLegendAlignment(legend: XYLensState['legend']) {
   };
 }
 
-function getLegendLayout(legend: XYLensState['legend']) {
-  if (isLegendInside(legend)) {
-    return {
-      inside: true,
-      ...(legend.floatingColumns ? { columns: legend.floatingColumns } : {}),
-      ...getLegendAlignment(legend),
-    };
-  }
-  return {
-    inside: false,
-    ...getLegendSizeAPI(legend.legendSize),
-    ...(legend.position ? { position: legend.position } : {}),
-  };
-}
-
 export function convertLegendToAPIFormat(
   legend: XYLensState['legend']
 ): Pick<XYState, 'legend'> | {} {
-  const legendOptions = stripUndefined({
-    visibility: !legend.isVisible ? 'hidden' : legend.showSingleSeries ? 'auto' : 'visible',
-    truncate_after_lines: legend?.maxLines == null ? undefined : legend.maxLines,
-    statistics: legend?.legendStats?.length
-      ? legend.legendStats.map(mapStatToSnakeCase)
-      : undefined,
-    ...getLegendLayout(legend),
+  const visibility = !legend.isVisible ? 'hidden' : legend.showSingleSeries ? 'auto' : 'visible';
+
+  if (isLegendInside(legend)) {
+    return {
+      legend: stripUndefined({
+        visibility,
+        statistics: legend.legendStats?.length
+          ? legend.legendStats.map(mapStatToSnakeCase)
+          : undefined,
+        inside: true,
+        ...(legend.floatingColumns ? { columns: legend.floatingColumns } : {}),
+        ...getLegendAlignment(legend),
+      }),
+    };
+  }
+
+  const position = legend.position ?? DEFAULT_LEGEND_POSITON;
+  const isListLayout = isOutsideListLegendLayoutState(legend);
+
+  const baseOutside = stripUndefined({
+    visibility,
+    inside: false as const,
+    position,
+    ...getLegendSizeAPI(legend.legendSize),
+    statistics: legend.legendStats?.length ? legend.legendStats.map(mapStatToSnakeCase) : undefined,
   });
 
-  return { legend: legendOptions };
+  if (isListLayout) {
+    return {
+      legend: {
+        ...baseOutside,
+        layout: stripUndefined({
+          type: 'list' as const,
+          truncate:
+            legend.listLayoutMaxWidth == null
+              ? undefined
+              : { max_pixels: legend.listLayoutMaxWidth },
+        }),
+      },
+    };
+  }
+
+  if (legend.maxLines != null) {
+    return {
+      legend: {
+        ...baseOutside,
+        layout: {
+          type: 'grid' as const,
+          truncate: { max_lines: legend.maxLines },
+        },
+      },
+    };
+  }
+
+  return { legend: baseOutside };
 }
