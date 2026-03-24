@@ -527,14 +527,14 @@ describe('XY', () => {
           },
           layers: [minimalLayer],
         })
-      ).toThrow(
-        '[legend]: types that failed validation:\n' +
-          '- [legend.0.position]: types that failed validation:\n' +
-          ' - [legend.position.0]: expected value to equal [top]\n' +
-          ' - [legend.position.1]: expected value to equal [bottom]\n' +
-          '- [legend.1.layout.type]: expected value to equal [grid]\n' +
-          '- [legend.2.inside]: expected value to equal [true]'
-      );
+      ).toThrowErrorMatchingInlineSnapshot(`
+        "[legend]: types that failed validation:
+        - [legend.0.position]: types that failed validation:
+         - [legend.position.0]: expected value to equal [top]
+         - [legend.position.1]: expected value to equal [bottom]
+        - [legend.1.layout.type]: expected value to equal [grid]
+        - [legend.2.inside]: expected value to equal [true]"
+      `);
     });
 
     it('should not allow both truncation values at the same time', () => {
@@ -555,15 +555,14 @@ describe('XY', () => {
           },
           layers: [minimalLayer],
         })
-      ).toThrow(
-        // TODO: Improve validation
-        '[legend]: types that failed validation:\n' +
-          '- [legend.0.layout]: types that failed validation:\n' +
-          ' - [legend.layout.0.type]: expected value to equal [grid]\n' +
-          ' - [legend.layout.1.truncate.after_lines]: definition for this key is missing\n' +
-          '- [legend.1.layout.type]: expected value to equal [grid]\n' +
-          '- [legend.2.inside]: expected value to equal [true]'
-      );
+      ).toThrowErrorMatchingInlineSnapshot(`
+        "[legend]: types that failed validation:
+        - [legend.0.layout]: types that failed validation:
+         - [legend.layout.0.type]: expected value to equal [grid]
+         - [legend.layout.1.truncate.after_lines]: definition for this key is missing
+        - [legend.1.layout.type]: expected value to equal [grid]
+        - [legend.2.inside]: expected value to equal [true]"
+      `);
     });
   });
 
