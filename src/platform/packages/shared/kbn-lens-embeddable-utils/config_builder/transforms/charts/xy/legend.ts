@@ -12,7 +12,10 @@ import type { XYState as XYLensState } from '@kbn/lens-common';
 import type { XYState } from '../../../schema';
 import { getLegendTruncateAfterLines, stripUndefined } from '../utils';
 
-type OutsideLegendType = Extract<Required<XYState['legend']>, { inside: false }>;
+type LegendType = NonNullable<XYState['legend']>;
+type LegendWithSize = Extract<LegendType, { size?: unknown }>;
+type OutsideLegendSize = LegendWithSize['size'];
+type OutsideLegendSizeApi = Exclude<OutsideLegendSize, undefined>;
 type StatisticsType = NonNullable<NonNullable<XYState['legend']>['statistics']>[number];
 
 const StatsAPIToOldState = {
@@ -106,9 +109,7 @@ function extractAlignment(legend: XYState['legend']):
   return {};
 }
 
-function getLegendSize(
-  size: OutsideLegendType['size'] | undefined
-): XYLensState['legend']['legendSize'] {
+function getLegendSize(size: OutsideLegendSize): XYLensState['legend']['legendSize'] {
   switch (size) {
     case 'small':
       return LegendSize.SMALL;
@@ -158,23 +159,25 @@ export function convertLegendToStateFormat(legend: XYState['legend']): {
           position: DEFAULT_LEGEND_POSITON,
           ...(legend?.columns ? { floatingColumns: legend?.columns } : {}),
         }
-      : isVerticalPosition(legend)
-      ? {
-          position: legend?.position ?? DEFAULT_LEGEND_POSITON,
-          legendSize: outsideLegendSize ? getLegendSize(outsideLegendSize) : LegendSize.AUTO,
-          ...(!isListLegendLayout && truncateMaxLines ? { maxLines: truncateMaxLines } : {}),
-        }
       : {
           position: legend?.position ?? DEFAULT_LEGEND_POSITON,
           legendSize: outsideLegendSize ? getLegendSize(outsideLegendSize) : LegendSize.AUTO,
-          ...(isListLegendLayout
+          ...(isVerticalPosition(legend)
             ? {
-                layout: LegendLayout.List,
-                ...(truncateMaxPixels != null ? { listLayoutMaxWidth: truncateMaxPixels } : {}),
+                ...(!isListLegendLayout && truncateMaxLines ? { maxLines: truncateMaxLines } : {}),
               }
-            : truncateMaxLines
-            ? { maxLines: truncateMaxLines }
-            : {}),
+            : {
+                ...(isListLegendLayout
+                  ? {
+                      layout: LegendLayout.List,
+                      ...(truncateMaxPixels != null
+                        ? { listLayoutMaxWidth: truncateMaxPixels }
+                        : {}),
+                    }
+                  : truncateMaxLines
+                  ? { maxLines: truncateMaxLines }
+                  : {}),
+              }),
         }),
   };
 
@@ -183,7 +186,7 @@ export function convertLegendToStateFormat(legend: XYState['legend']): {
 
 function getLegendSizeAPI(
   size: XYLensState['legend']['legendSize'] | undefined
-): Pick<OutsideLegendType, 'size'> | {} {
+): { size: OutsideLegendSizeApi } | {} {
   switch (size) {
     case LegendSize.SMALL:
       return { size: 'small' };
