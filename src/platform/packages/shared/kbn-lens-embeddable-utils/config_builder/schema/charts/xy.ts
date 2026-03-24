@@ -266,18 +266,11 @@ const xySharedSettings = {
             inside: schema.maybe(schema.literal(false)),
             layout: schema.maybe(schema.oneOf([gridLayout, listLayout])),
             position: schema.maybe(schema.oneOf([schema.literal('top'), schema.literal('bottom')])),
-            size: schema.maybe(
-              schema.oneOf([
-                schema.literal('small'),
-                schema.literal('medium'),
-                schema.literal('large'),
-                schema.literal('xlarge'),
-              ])
-            ),
           },
           {
             meta: {
               id: 'xyLegendOutsideHorizontal',
+              title: 'Outside horizontal',
               description: 'Outside legend positioned horizontal (top/bottom) of the chart',
             },
           }
@@ -301,6 +294,7 @@ const xySharedSettings = {
           {
             meta: {
               id: 'xyLegendOutsideVertical',
+              title: 'Outside vertical',
               description: 'Outside legend positioned vertical (left/right) of the chart',
             },
           }
@@ -328,6 +322,7 @@ const xySharedSettings = {
           {
             meta: {
               id: 'xyLegendInside',
+              title: 'Inside',
               description: 'Internal legend positioned inside the chart',
             },
           }
