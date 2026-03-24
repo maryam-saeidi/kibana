@@ -194,7 +194,7 @@ const listLayout = schema.object({
         min: 50,
         max: 1000,
         meta: {
-          description: 'Maximum pixels before truncating legend items (50-10000), default: 250',
+          description: 'Maximum pixels before truncating legend items (50-10000)',
           id: 'legendTruncateMaxPixel',
         },
       }),
