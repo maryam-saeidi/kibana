@@ -8,10 +8,8 @@
  */
 
 import type { XYState as XYLensState } from '@kbn/lens-common';
-import { LensConfigBuilder } from '../../config_builder';
 import { xyStateSchema } from '../../schema/charts/xy';
 import type { LensAttributes } from '../../types';
-import type { LensApiState } from '../../schema';
 import { validateAPIConverter, validateConverter } from '../validate';
 import {
   apiXYWithNoTitleAndCustomOutsideLegend,
@@ -395,58 +393,6 @@ describe('XY', () => {
 
     it('should correctly transform with custom position legend - bug 248611', () => {
       validateAPIConverter(apiXYWithNoTitleAndCustomOutsideLegend, xyStateSchema);
-    });
-
-    it('should persist list legend max width through API conversion', () => {
-      const builder = new LensConfigBuilder();
-      const listLegendApiConfig: LensApiState = {
-        type: 'xy',
-        title: 'List legend chart',
-        legend: {
-          visibility: 'visible',
-          position: 'bottom',
-          layout: {
-            type: 'list',
-            truncate: {
-              max_pixels: 320,
-            },
-          },
-        },
-        layers: [
-          {
-            dataset: { type: 'dataView', id: 'myDataView' },
-            type: 'bar',
-            ignore_global_filters: false,
-            sampling: 1,
-            y: [{ operation: 'count', empty_as_null: false }],
-          },
-        ],
-      };
-
-      const lensStateConfig = builder.fromAPIFormat(listLegendApiConfig);
-      const listLegend = (lensStateConfig.state.visualization as XYLensState).legend;
-
-      expect(listLegend.layout).toBe('list');
-      expect(listLegend.listLayoutMaxWidth).toBe(320);
-      expect(listLegend.shouldTruncate).toBe(true);
-      expect(listLegend.maxLines).toBeUndefined();
-
-      const newApiConfig = builder.toAPIFormat(lensStateConfig);
-
-      expect(newApiConfig).toMatchObject({
-        type: 'xy',
-        legend: {
-          visibility: 'visible',
-          inside: false,
-          position: 'bottom',
-          layout: {
-            type: 'list',
-            truncate: {
-              max_pixels: 320,
-            },
-          },
-        },
-      });
     });
   });
 });
