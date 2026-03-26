@@ -667,7 +667,7 @@ describe('XY', () => {
             layout: {
               type: 'list',
               truncate: {
-                after_lines: 2,
+                max_lines: 2,
                 max_pixels: 320,
               },
             },
@@ -678,7 +678,7 @@ describe('XY', () => {
         "[legend]: types that failed validation:
         - [legend.0.layout]: types that failed validation:
          - [legend.layout.0.type]: expected value to equal [grid]
-         - [legend.layout.1.truncate.after_lines]: definition for this key is missing
+         - [legend.layout.1.truncate.max_lines]: Additional properties are not allowed ('max_lines' was unexpected)
         - [legend.1.layout.type]: expected value to equal [grid]
         - [legend.2.inside]: expected value to equal [true]"
       `);
