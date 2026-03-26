@@ -227,14 +227,15 @@ export function convertLegendToAPIFormat(
   legend: XYLensState['legend']
 ): Pick<XYState, 'legend'> | {} {
   const visibility = !legend.isVisible ? 'hidden' : legend.showSingleSeries ? 'auto' : 'visible';
+  const statistics = legend.legendStats?.length
+    ? legend.legendStats.map(mapStatToSnakeCase)
+    : undefined;
 
   if (isLegendInside(legend)) {
     return {
       legend: stripUndefined({
         visibility,
-        statistics: legend.legendStats?.length
-          ? legend.legendStats.map(mapStatToSnakeCase)
-          : undefined,
+        statistics,
         inside: true,
         ...(legend.floatingColumns ? { columns: legend.floatingColumns } : {}),
         ...getLegendAlignment(legend),
@@ -250,7 +251,7 @@ export function convertLegendToAPIFormat(
     inside: false as const,
     position,
     ...getLegendSizeAPI(legend.legendSize),
-    statistics: legend.legendStats?.length ? legend.legendStats.map(mapStatToSnakeCase) : undefined,
+    statistics,
   });
 
   if (isListLayout) {
