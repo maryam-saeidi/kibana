@@ -8,7 +8,7 @@
  */
 
 import { LegendLayout, LegendSize, type XYLegendValue } from '@kbn/chart-expressions-common';
-import type { XYState as XYLensState } from '@kbn/lens-common';
+import type { XYVisualizationState } from '@kbn/lens-common';
 import type { XYState } from '../../../schema';
 import { getLegendTruncateAfterLines, stripUndefined } from '../utils';
 
@@ -76,7 +76,7 @@ function isOutsideListLegendLayout(legend: XYState['legend']) {
       (legend.position === 'top' || legend.position === 'bottom')
   );
 }
-function isOutsideListLegendLayoutState(legend: XYLensState['legend']) {
+function isOutsideListLegendLayoutState(legend: XYVisualizationState['legend']) {
   return Boolean(
     !isLegendInside(legend) &&
       legend.layout === LegendLayout.List &&
@@ -109,7 +109,9 @@ function extractAlignment(legend: XYState['legend']):
   return {};
 }
 
-function getLegendSize(size: OutsideLegendSize): XYLensState['legend']['legendSize'] {
+function getLegendSize(
+  size: OutsideLegendSize
+): XYVisualizationState['legend']['legendSize'] {
   switch (size) {
     case 'small':
       return LegendSize.SMALL;
@@ -138,14 +140,14 @@ function getOutsideLegendSize(
 }
 
 export function convertLegendToStateFormat(legend: XYState['legend']): {
-  legend: XYLensState['legend'];
+  legend: XYVisualizationState['legend'];
 } {
   const isListLegendLayout = isOutsideListLegendLayout(legend);
   const legendTruncation = getLegendTruncation(legend);
   const truncateMaxLines = legendTruncation?.max_lines;
   const truncateMaxPixels = legendTruncation?.max_pixels;
   const outsideLegendSize = getOutsideLegendSize(legend);
-  const newStateLegend: XYLensState['legend'] = {
+  const newStateLegend: XYVisualizationState['legend'] = {
     isVisible: legend?.visibility === 'auto' || legend?.visibility === 'visible',
     shouldTruncate: Boolean(truncateMaxLines || truncateMaxPixels), // 0 will be interpreted as false
     ...(legend?.statistics
@@ -185,7 +187,7 @@ export function convertLegendToStateFormat(legend: XYState['legend']): {
 }
 
 function getLegendSizeAPI(
-  size: XYLensState['legend']['legendSize'] | undefined
+  size: XYVisualizationState['legend']['legendSize'] | undefined
 ): { size: OutsideLegendSizeApi } | {} {
   switch (size) {
     case LegendSize.SMALL:
@@ -202,7 +204,7 @@ function getLegendSizeAPI(
 }
 
 // @TODO improve this check
-function isLegendInside(legend: XYLensState['legend']): boolean {
+function isLegendInside(legend: XYVisualizationState['legend']): boolean {
   if (legend.isInside != null) {
     return legend.isInside;
   }
@@ -214,7 +216,7 @@ function isLegendInside(legend: XYLensState['legend']): boolean {
   );
 }
 
-function getLegendAlignment(legend: XYLensState['legend']) {
+function getLegendAlignment(legend: XYVisualizationState['legend']) {
   if (!legend.verticalAlignment && !legend.horizontalAlignment) {
     return {};
   }
@@ -224,7 +226,7 @@ function getLegendAlignment(legend: XYLensState['legend']) {
 }
 
 export function convertLegendToAPIFormat(
-  legend: XYLensState['legend']
+  legend: XYVisualizationState['legend']
 ): Pick<XYState, 'legend'> | {} {
   const visibility = !legend.isVisible ? 'hidden' : legend.showSingleSeries ? 'auto' : 'visible';
   const statistics = legend.legendStats?.length
