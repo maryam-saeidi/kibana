@@ -109,9 +109,7 @@ function extractAlignment(legend: XYState['legend']):
   return {};
 }
 
-function getLegendSize(
-  size: OutsideLegendSize
-): XYVisualizationState['legend']['legendSize'] {
+function getLegendSize(size: OutsideLegendSize): XYVisualizationState['legend']['legendSize'] {
   switch (size) {
     case 'small':
       return LegendSize.SMALL;
@@ -172,9 +170,7 @@ export function convertLegendToStateFormat(legend: XYState['legend']): {
                 ...(isListLegendLayout
                   ? {
                       layout: LegendLayout.List,
-                      ...(truncateMaxPixels != null
-                        ? { listLayoutMaxWidth: truncateMaxPixels }
-                        : {}),
+                      ...(truncateMaxPixels != null ? { maxPixels: truncateMaxPixels } : {}),
                     }
                   : truncateMaxLines
                   ? { maxLines: truncateMaxLines }
@@ -262,10 +258,7 @@ export function convertLegendToAPIFormat(
         ...baseOutside,
         layout: stripUndefined({
           type: 'list' as const,
-          truncate:
-            legend.listLayoutMaxWidth == null
-              ? undefined
-              : { max_pixels: legend.listLayoutMaxWidth },
+          truncate: legend.maxPixels == null ? undefined : { max_pixels: legend.maxPixels },
         }),
       },
     };
