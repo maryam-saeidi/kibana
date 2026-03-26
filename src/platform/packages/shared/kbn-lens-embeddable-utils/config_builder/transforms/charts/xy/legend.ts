@@ -161,7 +161,7 @@ export function convertLegendToStateFormat(legend: XYState['legend']): {
         }
       : {
           position: legend?.position ?? DEFAULT_LEGEND_POSITON,
-          legendSize: outsideLegendSize ? getLegendSize(outsideLegendSize) : LegendSize.AUTO,
+          legendSize: outsideLegendSize ? getLegendSize(outsideLegendSize) : undefined,
           ...(isVerticalPosition(legend)
             ? {
                 ...(!isListLegendLayout && truncateMaxLines ? { maxLines: truncateMaxLines } : {}),
