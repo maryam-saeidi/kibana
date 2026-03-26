@@ -221,6 +221,24 @@ function getLegendAlignment(legend: XYVisualizationState['legend']) {
   };
 }
 
+function getApiLegendTruncate(
+  legend: Pick<XYVisualizationState['legend'], 'shouldTruncate' | 'maxLines' | 'maxPixels'>
+): {
+  max_lines?: number;
+  max_pixels?: number;
+} {
+  if (!legend) return {};
+
+  const { shouldTruncate, maxLines = 1, maxPixels = 250 } = legend;
+
+  if (!shouldTruncate) return {};
+
+  return {
+    max_lines: maxLines > 0 ? maxLines : undefined,
+    max_pixels: maxPixels > 0 ? maxPixels : undefined,
+  };
+}
+
 export function convertLegendToAPIFormat(
   legend: XYVisualizationState['legend']
 ): Pick<XYState, 'legend'> | {} {
@@ -252,13 +270,15 @@ export function convertLegendToAPIFormat(
     statistics,
   });
 
+  const truncate = getApiLegendTruncate(legend);
+
   if (isListLayout) {
     return {
       legend: {
         ...baseOutside,
         layout: stripUndefined({
           type: 'list' as const,
-          truncate: legend.maxPixels == null ? undefined : { max_pixels: legend.maxPixels },
+          truncate: truncate.max_pixels ? { max_pixels: truncate.max_pixels } : undefined,
         }),
       },
     };
