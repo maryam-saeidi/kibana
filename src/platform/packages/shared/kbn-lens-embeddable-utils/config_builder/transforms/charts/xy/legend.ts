@@ -269,17 +269,15 @@ export function convertLegendToAPIFormat(
     };
   }
 
-  if (legend.maxLines != null) {
-    return {
-      legend: {
-        ...baseOutside,
-        layout: {
-          type: 'grid' as const,
-          truncate: { max_lines: getLegendTruncateAfterLines(legend) },
-        },
-      },
-    };
-  }
+  const maxLines = getLegendTruncateAfterLines(legend);
 
-  return { legend: baseOutside };
+  return {
+    legend: {
+      ...baseOutside,
+      layout: stripUndefined({
+        type: 'grid' as const,
+        truncate: maxLines != null ? { max_lines: maxLines } : undefined,
+      }),
+    },
+  };
 }
