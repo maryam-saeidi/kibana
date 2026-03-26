@@ -10,7 +10,7 @@
 import { LegendLayout, LegendSize, type XYLegendValue } from '@kbn/chart-expressions-common';
 import type { XYVisualizationState } from '@kbn/lens-common';
 import type { XYState } from '../../../schema';
-import { getLegendTruncateAfterLines, stripUndefined } from '../utils';
+import { stripUndefined } from '../utils';
 
 type LegendType = NonNullable<XYState['legend']>;
 type LegendWithSize = Extract<LegendType, { size?: unknown }>;
@@ -229,7 +229,10 @@ function getApiLegendTruncate(
 } {
   if (!legend) return {};
 
-  const { shouldTruncate, maxLines = 1, maxPixels = 250 } = legend;
+  const { shouldTruncate: stateShouldTruncate, maxLines = 1, maxPixels = 250 } = legend;
+  // if shouldTruncate is not explicitly set, infer it from maxLines and maxPixels
+  const shouldTruncate =
+    stateShouldTruncate != null ? stateShouldTruncate : Boolean(maxLines || maxPixels);
 
   if (!shouldTruncate) return {};
 
@@ -270,7 +273,7 @@ export function convertLegendToAPIFormat(
     statistics,
   });
 
-  const truncate = getApiLegendTruncate(legend);
+  const { max_pixels, max_lines } = getApiLegendTruncate(legend);
 
   if (isListLayout) {
     return {
@@ -278,20 +281,18 @@ export function convertLegendToAPIFormat(
         ...baseOutside,
         layout: stripUndefined({
           type: 'list' as const,
-          truncate: truncate.max_pixels ? { max_pixels: truncate.max_pixels } : undefined,
+          truncate: max_pixels ? { max_pixels } : undefined,
         }),
       },
     };
   }
-
-  const maxLines = getLegendTruncateAfterLines(legend);
 
   return {
     legend: {
       ...baseOutside,
       layout: stripUndefined({
         type: 'grid' as const,
-        truncate: maxLines != null ? { max_lines: maxLines } : undefined,
+        truncate: max_lines != null ? { max_lines } : undefined,
       }),
     },
   };
