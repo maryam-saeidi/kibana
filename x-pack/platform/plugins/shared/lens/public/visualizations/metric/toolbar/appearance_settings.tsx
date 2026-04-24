@@ -26,6 +26,7 @@ import type {
   IconPosition,
   Alignment,
   PrimaryMetricPosition,
+  MetricSpacing,
   MetricLayoutWithDefault,
 } from '@kbn/lens-common';
 import {
@@ -130,6 +131,20 @@ export function MetricAppearanceSettings({
             });
           }}
           dataTestSubj="lens-metric-appearance-primary-metric-font-size-btn"
+        />
+        <AppearanceOption
+          label={i18n.translate('xpack.lens.metric.appearancePopover.spacing', {
+            defaultMessage: 'Spacing',
+          })}
+          value={state.spacing ?? LENS_METRIC_STATE_DEFAULTS.spacing}
+          options={spacingOptions}
+          onChange={(id) => {
+            setState({
+              ...state,
+              spacing: id,
+            });
+          }}
+          dataTestSubj="lens-metric-appearance-primary-metric-spacing-btn"
         />
       </AppearanceOptionGroup>
       <EuiHorizontalRule margin="m" />
@@ -402,6 +417,21 @@ const fontSizeOptions: Array<EuiButtonGroupOptionProps & { id: PrimaryMetricFont
     id: 'fit',
     label: i18n.translate('xpack.lens.metric.appearancePopover.fit', {
       defaultMessage: 'Fit',
+    }),
+  },
+];
+
+const spacingOptions: Array<EuiButtonGroupOptionProps & { id: MetricSpacing }> = [
+  {
+    id: 'small',
+    label: i18n.translate('xpack.lens.metric.appearancePopover.spacing.small', {
+      defaultMessage: 'Small',
+    }),
+  },
+  {
+    id: 'large',
+    label: i18n.translate('xpack.lens.metric.appearancePopover.spacing.large', {
+      defaultMessage: 'Large',
     }),
   },
 ];

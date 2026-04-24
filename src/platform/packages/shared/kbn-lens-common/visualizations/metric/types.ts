@@ -17,6 +17,7 @@ export type ValueFontMode = Exclude<MetricStyle['valueFontSize'], number>;
 export type PrimaryMetricFontSize = ValueFontMode;
 
 export type PrimaryMetricPosition = MetricStyle['valuePosition'];
+export type MetricSpacing = MetricStyle['spacing'];
 
 export type SecondaryTrendType = 'none' | 'static' | 'dynamic';
 
@@ -61,6 +62,7 @@ export interface MetricVisualizationState {
   primaryAlign?: MetricStyle['valueTextAlign'];
   iconAlign?: MetricStyle['iconAlign'];
   valueFontMode?: ValueFontMode;
+  spacing?: MetricSpacing;
   /**
    * legacy state property
    * @deprecated
@@ -95,6 +97,7 @@ export type MetricStateOptinalsWithDefault = Pick<
   | 'secondaryAlign'
   | 'iconAlign'
   | 'valueFontMode'
+  | 'spacing'
   | 'primaryPosition'
   | 'secondaryLabelPosition'
   | 'applyColorTo'

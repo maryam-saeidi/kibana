@@ -35,6 +35,7 @@ export const LENS_METRIC_STATE_DEFAULTS: MetricStateDefaults = {
   secondaryAlign: 'right',
   iconAlign: 'right',
   valueFontMode: 'default',
+  spacing: 'small',
   primaryPosition: 'bottom',
   secondaryLabelPosition: 'before',
   applyColorTo: 'background',

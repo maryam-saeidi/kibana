@@ -213,6 +213,7 @@ export type {
   IconPosition,
   Alignment,
   PrimaryMetricPosition,
+  MetricSpacing,
   MetricLayoutWithDefault,
 } from './visualizations/metric/types';
 export type {

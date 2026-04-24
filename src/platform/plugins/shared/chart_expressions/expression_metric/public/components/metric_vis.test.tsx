@@ -85,6 +85,7 @@ const defaultMetricParams: MetricVisParam = {
   secondaryAlign: 'right',
   iconAlign: 'left',
   valueFontSize: 'default',
+  spacing: 'small',
   secondaryTrend: {
     visuals: undefined,
     baseline: undefined,
@@ -1243,6 +1244,7 @@ describe('MetricVisComponent', function () {
             maxCols: 3,
             titlesTextAlign: 'left',
             valueFontSize: 'default',
+            spacing: 'small',
             primaryAlign: 'right',
             secondaryAlign: 'right',
             primaryPosition: 'bottom',

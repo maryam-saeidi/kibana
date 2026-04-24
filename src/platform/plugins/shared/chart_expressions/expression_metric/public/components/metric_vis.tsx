@@ -358,6 +358,7 @@ export const MetricVis = ({
                   extraTextAlign: config.metric.secondaryAlign,
                   iconAlign: config.metric.iconAlign,
                   valueFontSize: config.metric.valueFontSize,
+                  spacing: config.metric.spacing,
                   valuePosition: config.metric.primaryPosition,
                 },
               },

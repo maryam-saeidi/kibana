@@ -52,6 +52,7 @@ const fullState: Required<
   primaryPosition: 'bottom',
   iconAlign: 'left',
   valueFontMode: 'default',
+  spacing: 'small',
   secondaryTrend: { type: 'none' },
   secondaryLabelPosition: 'before',
   applyColorTo: 'background',
@@ -220,6 +221,21 @@ describe('appearance settings', () => {
     btnGroup.select('Default');
 
     expect(mockSetState.mock.calls.map(([s]) => s.valueFontMode)).toEqual(['default']);
+  });
+
+  it('should set spacing to Large', async () => {
+    renderComponent({ spacing: 'small' });
+
+    const btnGroup = new EuiButtonGroupTestHarness(
+      'lens-metric-appearance-primary-metric-spacing-btn'
+    );
+
+    expect(btnGroup.getSelected()?.textContent).toBe('Small');
+
+    btnGroup.select('Large');
+    btnGroup.select('Small');
+
+    expect(mockSetState.mock.calls.map(([s]) => s.spacing)).toEqual(['large']);
   });
 
   it('should set iconAlign when Left position option is selected', async () => {
