@@ -552,7 +552,10 @@ function reverseBuildVisualizationState(
   } as MetricConfig;
 }
 
-function buildFormBasedLayer(layer: MetricConfigNoESQL): FormBasedPersistedState['layers'] {
+function buildFormBasedLayer(
+  layer: MetricConfigNoESQL,
+  timeFieldName?: string
+): FormBasedPersistedState['layers'] {
   const [primaryMetric, secondaryMetric] = layer.metrics ?? [];
   if (!isAPIColumnOfMetricType(primaryMetric) || isSecondaryMetric(primaryMetric)) {
     throw Error('The primary metric must refer to a metric operation.');
@@ -579,7 +582,11 @@ function buildFormBasedLayer(layer: MetricConfigNoESQL): FormBasedPersistedState
   addLayerColumn(defaultLayer, getAccessorName('metric'), newPrimaryColumns);
   if (trendLineLayer) {
     // Histogram first so columnOrder matches editor-built trendline layers and tabify agg order.
-    addLayerColumn(trendLineLayer, HISTOGRAM_COLUMN_NAME, getHistogramColumn({}));
+    addLayerColumn(
+      trendLineLayer,
+      HISTOGRAM_COLUMN_NAME,
+      getHistogramColumn(timeFieldName ? { options: { sourceField: timeFieldName } } : {})
+    );
     addLayerColumn(trendLineLayer, `${ACCESSOR}_trendline`, newPrimaryColumns);
   }
 
@@ -655,8 +662,11 @@ export type MetricAttributesWithoutFiltersAndQuery = Omit<MetricAttributes, 'sta
 };
 
 export function fromAPItoLensState(config: MetricConfig): MetricAttributesWithoutFiltersAndQuery {
-  const _buildDataLayer = (cfg: unknown, i: number) =>
-    buildFormBasedLayer(cfg as MetricConfigNoESQL);
+  const _buildDataLayer = (
+    cfg: unknown,
+    i: number,
+    index: { index: string; timeFieldName: string | undefined }
+  ) => buildFormBasedLayer(cfg as MetricConfigNoESQL, index.timeFieldName);
 
   const { layers, usedDataviews } = buildDatasourceStates(config, _buildDataLayer, getValueColumns);
 

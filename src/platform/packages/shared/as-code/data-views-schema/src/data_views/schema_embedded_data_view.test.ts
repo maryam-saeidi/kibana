@@ -8,8 +8,8 @@
  */
 
 import { RUNTIME_FIELD_COMPOSITE_TYPE } from '@kbn/data-views-plugin/common';
-import { AS_CODE_DATA_VIEW_SPEC_TYPE } from './constants';
-import { dataViewSpecSchema } from './schema_embedded_data_view';
+import { AS_CODE_DATA_VIEW_REFERENCE_TYPE, AS_CODE_DATA_VIEW_SPEC_TYPE } from './constants';
+import { dataViewReferenceSchema, dataViewSpecSchema } from './schema_embedded_data_view';
 
 describe('dataViewSpecSchema field_settings', () => {
   it('accepts indexed field overrides', () => {
@@ -62,5 +62,33 @@ describe('dataViewSpecSchema field_settings', () => {
     };
 
     expect(dataViewSpecSchema.validate(input)).toEqual(input);
+  });
+});
+
+describe('dataViewReferenceSchema', () => {
+  it('accepts a reference without a time_field (back-compat)', () => {
+    const input = {
+      type: AS_CODE_DATA_VIEW_REFERENCE_TYPE,
+      ref_id: 'kibana_sample_data_logs',
+    };
+    expect(dataViewReferenceSchema.validate(input)).toEqual(input);
+  });
+
+  it('accepts a reference with an explicit time_field override', () => {
+    const input = {
+      type: AS_CODE_DATA_VIEW_REFERENCE_TYPE,
+      ref_id: 'kibana_sample_data_logs',
+      time_field: 'timestamp',
+    };
+    expect(dataViewReferenceSchema.validate(input)).toEqual(input);
+  });
+
+  it('rejects a reference missing ref_id', () => {
+    expect(() =>
+      dataViewReferenceSchema.validate({
+        type: AS_CODE_DATA_VIEW_REFERENCE_TYPE,
+        time_field: 'timestamp',
+      })
+    ).toThrow(/ref_id/);
   });
 });

@@ -37,6 +37,10 @@ export const dataViewReferenceSchema = schema.object(
           'The id of the Kibana data view to use as the data source. Example: "my-data-view".',
       },
     }),
+    // Optional override for the referenced data view's time field. When omitted, the referenced
+    // data view's own default time field is used at render time. When set, this overrides it
+    // for time-aware columns (e.g. metric trendlines).
+    time_field: timeFieldSchema,
   },
   { meta: { id: 'kbn-data-view-reference-schema', title: 'Data view reference' } }
 );

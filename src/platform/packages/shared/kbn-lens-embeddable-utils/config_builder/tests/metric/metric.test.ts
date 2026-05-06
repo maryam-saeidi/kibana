@@ -7,7 +7,11 @@
  * License v3.0 only", or the "Server Side Public License, v 1".
  */
 
-import { AS_CODE_DATA_VIEW_SPEC_TYPE } from '@kbn/as-code-data-views-schema';
+import {
+  AS_CODE_DATA_VIEW_REFERENCE_TYPE,
+  AS_CODE_DATA_VIEW_SPEC_TYPE,
+} from '@kbn/as-code-data-views-schema';
+import type { FormBasedPersistedState, DateHistogramIndexPatternColumn } from '@kbn/lens-common';
 
 import { validator } from '../utils/validator';
 import type { MetricConfig } from '../../schema/charts/metric';
@@ -130,6 +134,64 @@ describe('Metric', () => {
 
       expect(apiOutput.metrics[0].color).toEqual(AUTO_COLOR);
       expect(apiOutput.metrics[1].color).toEqual(NO_COLOR);
+    });
+  });
+
+  // Regression coverage for https://github.com/elastic/kibana/issues/265832:
+  // when using a saved data view by reference, the trendline date histogram must
+  // pick up the user-supplied `time_field` instead of hardcoding `@timestamp`.
+  describe('trendline time field for data_view_reference (issue #265832)', () => {
+    const buildMetricWithTrend = (dataSource: MetricConfig['data_source']): MetricConfig =>
+      ({
+        type: 'metric',
+        title: 'Trendline data view ref',
+        data_source: dataSource,
+        metrics: [
+          {
+            type: 'primary',
+            operation: 'count',
+            empty_as_null: false,
+            background_chart: { type: 'trend' },
+          },
+        ],
+        sampling: 1,
+        ignore_global_filters: false,
+      } as MetricConfig);
+
+    const getTrendlineHistogramSourceField = (config: MetricConfig): string => {
+      const builder = new LensConfigBuilder();
+      const lensState = builder.fromAPIFormat(config);
+      const formBased = lensState.state.datasourceStates.formBased as FormBasedPersistedState;
+      const trendLayer = formBased.layers.layer_0_trendline;
+      expect(trendLayer).toBeDefined();
+      const histogramColumn = trendLayer.columns.x_date_histogram as
+        | DateHistogramIndexPatternColumn
+        | undefined;
+      expect(histogramColumn).toBeDefined();
+      expect(histogramColumn!.operationType).toBe('date_histogram');
+      return histogramColumn!.sourceField;
+    };
+
+    it('uses the supplied time_field on the trendline date histogram', () => {
+      // Mirrors Kibana Sample Data Logs, whose default time field is `timestamp` (no `@`).
+      const sourceField = getTrendlineHistogramSourceField(
+        buildMetricWithTrend({
+          type: AS_CODE_DATA_VIEW_REFERENCE_TYPE,
+          ref_id: 'kibana_sample_data_logs',
+          time_field: 'timestamp',
+        })
+      );
+      expect(sourceField).toBe('timestamp');
+    });
+
+    it('falls back to @timestamp when no time_field is provided on the reference', () => {
+      const sourceField = getTrendlineHistogramSourceField(
+        buildMetricWithTrend({
+          type: AS_CODE_DATA_VIEW_REFERENCE_TYPE,
+          ref_id: 'my-data-view',
+        })
+      );
+      expect(sourceField).toBe('@timestamp');
     });
   });
 });
