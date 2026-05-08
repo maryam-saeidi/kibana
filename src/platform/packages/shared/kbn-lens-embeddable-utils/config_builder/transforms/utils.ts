@@ -306,7 +306,7 @@ export function getDataSourceIndex(dataSource: DataSourceType) {
     case AS_CODE_DATA_VIEW_REFERENCE_TYPE:
       return {
         index: dataSource.ref_id,
-        timeFieldName: dataSource.time_field ?? timeFieldName,
+        timeFieldName,
       };
     default:
       throw Error('Data Source type not supported');

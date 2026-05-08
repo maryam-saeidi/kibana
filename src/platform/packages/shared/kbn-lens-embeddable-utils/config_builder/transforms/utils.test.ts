@@ -28,10 +28,7 @@ import type {
   ReferenceBasedIndexPatternColumn,
 } from '@kbn/lens-common';
 import type { TextBasedLayer } from '@kbn/lens-common';
-import {
-  AS_CODE_DATA_VIEW_REFERENCE_TYPE,
-  AS_CODE_DATA_VIEW_SPEC_TYPE,
-} from '@kbn/as-code-data-views-schema';
+import { AS_CODE_DATA_VIEW_SPEC_TYPE } from '@kbn/as-code-data-views-schema';
 import type { LensApiConfig, MetricConfig } from '../schema';
 import type { AggregateQuery, Filter, Query } from '@kbn/es-query';
 import type { LensAttributes } from '../types';
@@ -86,29 +83,6 @@ describe('getDatasetIndex', () => {
         "timeFieldName": undefined,
       }
     `);
-  });
-
-  test('falls back to @timestamp for a data_view_reference without time_field', () => {
-    const result = getDataSourceIndex({
-      type: AS_CODE_DATA_VIEW_REFERENCE_TYPE,
-      ref_id: 'kibana_sample_data_logs',
-    });
-    expect(result).toEqual({
-      index: 'kibana_sample_data_logs',
-      timeFieldName: '@timestamp',
-    });
-  });
-
-  test('honors a custom time_field on a data_view_reference (regression for #265832)', () => {
-    const result = getDataSourceIndex({
-      type: AS_CODE_DATA_VIEW_REFERENCE_TYPE,
-      ref_id: 'kibana_sample_data_logs',
-      time_field: 'timestamp',
-    });
-    expect(result).toEqual({
-      index: 'kibana_sample_data_logs',
-      timeFieldName: 'timestamp',
-    });
   });
 });
 
