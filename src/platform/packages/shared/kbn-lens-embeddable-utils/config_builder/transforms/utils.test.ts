@@ -28,7 +28,10 @@ import type {
   ReferenceBasedIndexPatternColumn,
 } from '@kbn/lens-common';
 import type { TextBasedLayer } from '@kbn/lens-common';
-import { AS_CODE_DATA_VIEW_SPEC_TYPE } from '@kbn/as-code-data-views-schema';
+import {
+  AS_CODE_DATA_VIEW_REFERENCE_TYPE,
+  AS_CODE_DATA_VIEW_SPEC_TYPE,
+} from '@kbn/as-code-data-views-schema';
 import type { LensApiConfig, MetricConfig } from '../schema';
 import type { AggregateQuery, Filter, Query } from '@kbn/es-query';
 import type { LensAttributes } from '../types';
@@ -83,6 +86,43 @@ describe('getDatasetIndex', () => {
         "timeFieldName": undefined,
       }
     `);
+  });
+
+  describe('data_view_reference', () => {
+    const makeDataView = (timeFieldName?: string) =>
+      ({ timeFieldName } as unknown as import('@kbn/data-views-plugin/common').DataView);
+
+    test('falls back to @timestamp when no resolvedReferences are provided', () => {
+      const result = getDataSourceIndex({
+        type: AS_CODE_DATA_VIEW_REFERENCE_TYPE,
+        ref_id: 'some-data-view-id',
+      });
+      expect(result).toEqual({ index: 'some-data-view-id', timeFieldName: '@timestamp' });
+    });
+
+    test('falls back to @timestamp when ref_id is not in dataViewsByRefId', () => {
+      const result = getDataSourceIndex(
+        { type: AS_CODE_DATA_VIEW_REFERENCE_TYPE, ref_id: 'unknown' },
+        { dataViewsByRefId: new Map([['other-id', makeDataView('event_time')]]) }
+      );
+      expect(result).toEqual({ index: 'unknown', timeFieldName: '@timestamp' });
+    });
+
+    test('uses the resolved data view timeFieldName when present', () => {
+      const result = getDataSourceIndex(
+        { type: AS_CODE_DATA_VIEW_REFERENCE_TYPE, ref_id: 'dv-1' },
+        { dataViewsByRefId: new Map([['dv-1', makeDataView('event_time')]]) }
+      );
+      expect(result).toEqual({ index: 'dv-1', timeFieldName: 'event_time' });
+    });
+
+    test('falls back to @timestamp when the resolved data view has no timeFieldName', () => {
+      const result = getDataSourceIndex(
+        { type: AS_CODE_DATA_VIEW_REFERENCE_TYPE, ref_id: 'dv-1' },
+        { dataViewsByRefId: new Map([['dv-1', makeDataView(undefined)]]) }
+      );
+      expect(result).toEqual({ index: 'dv-1', timeFieldName: '@timestamp' });
+    });
   });
 });
 

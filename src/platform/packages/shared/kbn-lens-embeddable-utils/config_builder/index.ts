@@ -8,6 +8,7 @@
  */
 
 export { LensConfigBuilder } from './config_builder';
+export type { ResolvedReferences } from './transforms/utils';
 export type {
   DataViewsCommon,
   LensAttributes,
