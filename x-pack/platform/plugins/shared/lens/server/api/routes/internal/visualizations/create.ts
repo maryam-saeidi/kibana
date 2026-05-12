@@ -8,7 +8,6 @@
 import { boomify, isBoom } from '@hapi/boom';
 
 import { LENS_CONTENT_TYPE } from '@kbn/lens-common/content_management/constants';
-import type { LensApiConfig } from '@kbn/lens-embeddable-utils';
 import {
   LENS_INTERNAL_VIS_API_PATH,
   LENS_INTERNAL_API_VERSION,
@@ -20,15 +19,11 @@ import {
   lensCreateRequestQuerySchema,
   lensCreateResponseBodySchema,
 } from './schema';
-import {
-  getLensInternalRequestConfig,
-  getLensInternalResponseItem,
-  resolveRequestReferences,
-} from './utils';
+import { getLensInternalRequestConfig, getLensInternalResponseItem } from './utils';
 
 export const registerLensInternalVisualizationsCreateAPIRoute: RegisterAPIRouteFn = (
   router,
-  { contentManagement, builder, getDataViewsStart }
+  { contentManagement, builder }
 ) => {
   const createRoute = router.post({
     path: LENS_INTERNAL_VIS_API_PATH,
@@ -90,23 +85,8 @@ export const registerLensInternalVisualizationsCreateAPIRoute: RegisterAPIRouteF
         .for<LensSavedObject>(LENS_CONTENT_TYPE);
 
       try {
-        // Resolve referenced data views up-front so the synchronous transform
-        // pipeline can use them if needed (such as in metric trendline).
-        let resolvedReferences;
-        if (builder.isEnabled && builder.isSupported(builder.getType(req.body))) {
-          resolvedReferences = await resolveRequestReferences({
-            config: req.body as LensApiConfig,
-            request: req,
-            context: ctx,
-            getDataViewsStart,
-          });
-        }
         // Note: these types are to enforce loose param typings of client methods
-        const { references, ...data } = getLensInternalRequestConfig(
-          builder,
-          req.body,
-          resolvedReferences
-        );
+        const { references, ...data } = getLensInternalRequestConfig(builder, req.body);
         const options: LensCreateIn['options'] = { ...req.query, references };
         const { result } = await client.create(data, options);
 

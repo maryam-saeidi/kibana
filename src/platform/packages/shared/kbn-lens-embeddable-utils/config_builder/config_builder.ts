@@ -54,11 +54,7 @@ import {
   fromLensStateToAPI as fromDatatableLensStateToAPI,
 } from './transforms/charts/datatable';
 import type { LensApiConfig, LensApiConfigChartType } from './schema';
-import {
-  filtersAndQueryToApiFormat,
-  filtersAndQueryToLensState,
-  type ResolvedReferences,
-} from './transforms/utils';
+import { filtersAndQueryToApiFormat, filtersAndQueryToLensState } from './transforms/utils';
 import { isLensLegacyFormat } from './utils';
 
 const compatibilityMap: Record<string, LensApiConfigChartType> = {
@@ -237,10 +233,7 @@ export class LensConfigBuilder {
     return chartState as LensAttributes;
   }
 
-  fromAPIFormat(
-    config: LensApiConfig,
-    resolvedReferences?: ResolvedReferences
-  ): LensAttributes {
+  fromAPIFormat(config: LensApiConfig): LensAttributes {
     const chartType = config.type;
 
     if (!(chartType in this.apiConvertersByChart)) {
@@ -248,9 +241,7 @@ export class LensConfigBuilder {
     }
 
     const converter = this.apiConvertersByChart[chartType];
-    // Only chart converters that accept the resolved-references context will read it;
-    // others ignore the extra argument harmlessly.
-    const attributes = converter.fromAPItoLensState(config as any, resolvedReferences as any); // handle type mismatches
+    const attributes = converter.fromAPItoLensState(config as any); // handle type mismatches
     const { filters, query, references } = filtersAndQueryToLensState(
       config,
       attributes.references ?? []

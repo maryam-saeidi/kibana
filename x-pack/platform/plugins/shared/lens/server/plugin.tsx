@@ -124,18 +124,12 @@ export class LensServerPlugin
 
     const builder = new LensConfigBuilder();
 
-    const getDataViewsStart = async () => {
-      const [, startPlugins] = await core.getStartServices();
-      return startPlugins.dataViews;
-    };
-
     registerLensAPIRoutes({
       http: core.http,
       contentManagement: plugins.contentManagement,
       builder,
       logger: this.logger,
       usageCounter: plugins.usageCollection?.createUsageCounter('lens_visualizations_api'),
-      getDataViewsStart,
     });
 
     core

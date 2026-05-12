@@ -40,7 +40,6 @@ import {
   isTextBasedLayer,
   nonNullable,
   operationFromColumn,
-  type ResolvedReferences,
 } from '../utils';
 import { fromBucketLensApiToLensState } from '../columns/buckets';
 import { getHistogramColumn } from '../../columns/date_histogram';
@@ -553,10 +552,7 @@ function reverseBuildVisualizationState(
   } as MetricConfig;
 }
 
-function buildFormBasedLayer(
-  layer: MetricConfigNoESQL,
-  timeFieldName?: string
-): FormBasedPersistedState['layers'] {
+function buildFormBasedLayer(layer: MetricConfigNoESQL): FormBasedPersistedState['layers'] {
   const [primaryMetric, secondaryMetric] = layer.metrics ?? [];
   if (!isAPIColumnOfMetricType(primaryMetric) || isSecondaryMetric(primaryMetric)) {
     throw Error('The primary metric must refer to a metric operation.');
@@ -583,11 +579,7 @@ function buildFormBasedLayer(
   addLayerColumn(defaultLayer, getAccessorName('metric'), newPrimaryColumns);
   if (trendLineLayer) {
     // Histogram first so columnOrder matches editor-built trendline layers and tabify agg order.
-    addLayerColumn(
-      trendLineLayer,
-      HISTOGRAM_COLUMN_NAME,
-      getHistogramColumn(timeFieldName ? { options: { sourceField: timeFieldName } } : {})
-    );
+    addLayerColumn(trendLineLayer, HISTOGRAM_COLUMN_NAME, getHistogramColumn({}));
     addLayerColumn(trendLineLayer, `${ACCESSOR}_trendline`, newPrimaryColumns);
   }
 
@@ -662,22 +654,11 @@ export type MetricAttributesWithoutFiltersAndQuery = Omit<MetricAttributes, 'sta
   state: Omit<MetricAttributes['state'], 'filters' | 'query'>;
 };
 
-export function fromAPItoLensState(
-  config: MetricConfig,
-  resolvedReferences?: ResolvedReferences
-): MetricAttributesWithoutFiltersAndQuery {
-  const _buildDataLayer = (
-    cfg: unknown,
-    i: number,
-    index: { index: string; timeFieldName: string | undefined }
-  ) => buildFormBasedLayer(cfg as MetricConfigNoESQL, index.timeFieldName);
+export function fromAPItoLensState(config: MetricConfig): MetricAttributesWithoutFiltersAndQuery {
+  const _buildDataLayer = (cfg: unknown, i: number) =>
+    buildFormBasedLayer(cfg as MetricConfigNoESQL);
 
-  const { layers, usedDataviews } = buildDatasourceStates(
-    config,
-    _buildDataLayer,
-    getValueColumns,
-    resolvedReferences
-  );
+  const { layers, usedDataviews } = buildDatasourceStates(config, _buildDataLayer, getValueColumns);
 
   const visualization = buildVisualizationState(config);
 

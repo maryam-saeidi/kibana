@@ -23,7 +23,7 @@ import type {
 import { cleanupFormulaReferenceColumns } from '@kbn/lens-common';
 import { getIndexPatternFromESQLQuery, getTimeFieldFromESQLQuery } from '@kbn/esql-utils';
 import { Sha256 } from '@kbn/crypto-browser';
-import type { DataView, DataViewSpec } from '@kbn/data-views-plugin/common';
+import type { DataViewSpec } from '@kbn/data-views-plugin/common';
 import { FILTERS, isOfAggregateQueryType, type Filter, type Query } from '@kbn/es-query';
 import type { AsCodeFilter } from '@kbn/as-code-filters-schema';
 import { fromStoredFilters, toStoredFilters } from '@kbn/as-code-filters-transforms';
@@ -283,32 +283,13 @@ export function isSingleLayer(
 }
 
 /**
- * Request-scoped context of resolved entities referenced by a Lens API config.
+ * Gets DataView from the DataSource configuration
  *
- * Populated by the server (route handler) before invoking the synchronous
- * transform pipeline so transforms can look up data referenced by id (e.g. the
- * `timeFieldName` of a `data_view_reference`) without performing async lookups
- * themselves. Extend this interface as new transform consumers appear.
- *
- * When the context is omitted or a `ref_id` is missing, by-reference data
- * sources fall back to safe defaults (e.g. `LENS_DEFAULT_TIME_FIELD`).
+ * @param dataSource
+ * @param dataViewsAPI
+ * @returns
  */
-export interface ResolvedReferences {
-  /** Resolved data views keyed by `data_view_reference.ref_id`. */
-  dataViewsByRefId?: ReadonlyMap<string, DataView>;
-}
-
-/**
- * Gets DataView from the DataSource configuration.
- *
- * For by-reference data views, the optional `resolvedReferences` context is
- * consulted to recover the real `timeFieldName` of the underlying data view
- * (resolved upstream by the route handler).
- */
-export function getDataSourceIndex(
-  dataSource: DataSourceType,
-  resolvedReferences?: ResolvedReferences
-) {
+export function getDataSourceIndex(dataSource: DataSourceType) {
   const timeFieldName: string = LENS_DEFAULT_TIME_FIELD;
   switch (dataSource.type) {
     case AS_CODE_DATA_VIEW_SPEC_TYPE:
@@ -322,13 +303,11 @@ export function getDataSourceIndex(
         timeFieldName: getTimeFieldFromESQLQuery(dataSource.query),
         esqlQuery: dataSource.query,
       };
-    case AS_CODE_DATA_VIEW_REFERENCE_TYPE: {
-      const resolved = resolvedReferences?.dataViewsByRefId?.get(dataSource.ref_id);
+    case AS_CODE_DATA_VIEW_REFERENCE_TYPE:
       return {
         index: dataSource.ref_id,
-        timeFieldName: resolved?.timeFieldName ?? timeFieldName,
+        timeFieldName,
       };
-    }
     default:
       throw Error('Data Source type not supported');
   }
@@ -394,12 +373,7 @@ export const buildDatasourceStates = (
     i: number,
     index: { index: string; timeFieldName: string | undefined }
   ) => PersistedIndexPatternLayer | FormBasedPersistedState['layers'] | undefined,
-  getValueColumns: (
-    config: any,
-    i: number,
-    xAxisScale?: XScaleSchemaType
-  ) => TextBasedLayerColumn[],
-  resolvedReferences?: ResolvedReferences
+  getValueColumns: (config: any, i: number, xAxisScale?: XScaleSchemaType) => TextBasedLayerColumn[]
 ): {
   layers: LensAttributes['state']['datasourceStates'];
   usedDataviews: Record<string, APIDataView | APIAdHocDataView>;
@@ -431,7 +405,7 @@ export const buildDatasourceStates = (
 
     // This datasetIndex is always defined, but it can be empty if the data_source is a table
     // TODO evaluate the table data_source type and return the correct data_source index
-    const dataSourceIndex = getDataSourceIndex(dataSource, resolvedReferences);
+    const dataSourceIndex = getDataSourceIndex(dataSource);
     if (!dataSourceIndex) {
       throw Error('DataSource index must be defined');
     }

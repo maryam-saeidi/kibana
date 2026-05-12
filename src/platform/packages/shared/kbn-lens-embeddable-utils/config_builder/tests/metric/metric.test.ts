@@ -7,10 +7,7 @@
  * License v3.0 only", or the "Server Side Public License, v 1".
  */
 
-import {
-  AS_CODE_DATA_VIEW_REFERENCE_TYPE,
-  AS_CODE_DATA_VIEW_SPEC_TYPE,
-} from '@kbn/as-code-data-views-schema';
+import { AS_CODE_DATA_VIEW_SPEC_TYPE } from '@kbn/as-code-data-views-schema';
 
 import { validator } from '../utils/validator';
 import type { MetricConfig } from '../../schema/charts/metric';
@@ -133,63 +130,6 @@ describe('Metric', () => {
 
       expect(apiOutput.metrics[0].color).toEqual(AUTO_COLOR);
       expect(apiOutput.metrics[1].color).toEqual(NO_COLOR);
-    });
-  });
-
-  describe('trendline time field resolution', () => {
-    const refId = 'data-view-with-custom-time-field';
-    const trendlineMetric = {
-      type: 'metric',
-      title: 'Trendline test',
-      data_source: {
-        type: AS_CODE_DATA_VIEW_REFERENCE_TYPE,
-        ref_id: refId,
-      },
-      metrics: [
-        {
-          type: 'primary',
-          operation: 'count',
-          empty_as_null: false,
-          background_chart: { type: 'trend' },
-        },
-      ],
-      sampling: 1,
-      ignore_global_filters: false,
-    } as MetricConfig;
-
-    const getTrendlineHistogramSourceField = (lensState: ReturnType<LensConfigBuilder['fromAPIFormat']>) => {
-      const formBased =
-        lensState.state.datasourceStates && 'formBased' in lensState.state.datasourceStates
-          ? (lensState.state.datasourceStates as { formBased: { layers: Record<string, any> } })
-              .formBased
-          : undefined;
-      const trendLayer = formBased?.layers?.layer_0_trendline;
-      return trendLayer?.columns?.x_date_histogram?.sourceField as string | undefined;
-    };
-
-    const makeDataView = (timeFieldName?: string) =>
-      ({ timeFieldName } as unknown as import('@kbn/data-views-plugin/common').DataView);
-
-    it('falls back to @timestamp when no resolvedReferences are provided', () => {
-      const builder = new LensConfigBuilder();
-      const lensState = builder.fromAPIFormat(trendlineMetric);
-      expect(getTrendlineHistogramSourceField(lensState)).toBe('@timestamp');
-    });
-
-    it('uses the resolved time field for the by-reference data view', () => {
-      const builder = new LensConfigBuilder();
-      const lensState = builder.fromAPIFormat(trendlineMetric, {
-        dataViewsByRefId: new Map([[refId, makeDataView('event_time')]]),
-      });
-      expect(getTrendlineHistogramSourceField(lensState)).toBe('event_time');
-    });
-
-    it('falls back to @timestamp when the ref_id is missing from the resolved references', () => {
-      const builder = new LensConfigBuilder();
-      const lensState = builder.fromAPIFormat(trendlineMetric, {
-        dataViewsByRefId: new Map([['unrelated-id', makeDataView('event_time')]]),
-      });
-      expect(getTrendlineHistogramSourceField(lensState)).toBe('@timestamp');
     });
   });
 });
