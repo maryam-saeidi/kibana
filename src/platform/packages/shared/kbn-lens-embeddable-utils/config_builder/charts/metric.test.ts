@@ -161,14 +161,14 @@ test('generates metric chart config with trendline', async () => {
                   "x_date_histogram": Object {
                     "dataType": "date",
                     "isBucketed": true,
-                    "label": "@timestamp",
+                    "label": "",
                     "operationType": "date_histogram",
                     "params": Object {
                       "includeEmptyRows": true,
                       "interval": "auto",
                     },
                     "scale": "interval",
-                    "sourceField": "@timestamp",
+                    "sourceField": "",
                   },
                 },
                 "linkToLayers": Array [
