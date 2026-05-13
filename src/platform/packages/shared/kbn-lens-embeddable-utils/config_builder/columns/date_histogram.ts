@@ -24,10 +24,10 @@ export const getHistogramColumn = ({
   return {
     dataType: 'date',
     isBucketed: true,
-    label: '@timestamp',
+    label: options?.sourceField ?? '', // Will be hydrated at runtime
     operationType: 'date_histogram',
     scale: 'interval',
-    sourceField: options?.sourceField ?? '@timestamp',
+    sourceField: options?.sourceField ?? '', // Will be hydrated at runtime
     params: { interval, ...rest },
   };
 };

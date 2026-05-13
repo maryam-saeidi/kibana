@@ -355,4 +355,43 @@ describe('lens document equality', () => {
       )
     ).toBeTruthy();
   });
+
+  it('uses the visualization equality normalizer when available', () => {
+    const normalizedDoc = {
+      ...defaultDoc,
+      state: {
+        ...defaultDoc.state,
+        datasourceStates: {
+          indexpattern: {
+            normalized: true,
+          },
+        },
+      },
+    };
+    const normalizeForEquality = jest.fn(() => normalizedDoc);
+
+    mockVisualizationMap[visualizationType].normalizeForEquality = normalizeForEquality;
+
+    expect(
+      isLensEqual(
+        defaultDoc,
+        {
+          ...defaultDoc,
+          state: {
+            ...defaultDoc.state,
+            datasourceStates: {
+              indexpattern: {
+                different: true,
+              },
+            },
+          },
+        },
+        mockInjectFilterReferences,
+        mockDatasourceMap,
+        mockVisualizationMap,
+        mockAnnotationGroups
+      )
+    ).toBeTruthy();
+    expect(normalizeForEquality).toHaveBeenCalledTimes(2);
+  });
 });

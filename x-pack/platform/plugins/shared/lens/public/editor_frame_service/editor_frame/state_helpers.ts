@@ -296,21 +296,58 @@ export async function initializeSources(
     indexPatterns,
     references,
   });
+  const initializedVisualizationState = initializeVisualization({
+    visualizationMap,
+    visualizationState,
+    datasourceStates: initializedDatasourceStates,
+    references,
+    initialContext,
+    annotationGroups,
+  });
+  const postProcessedState = postProcessLoadedState({
+    visualizationMap,
+    visualizationType: visualizationState.activeId,
+    visualizationState: initializedVisualizationState,
+    datasourceStates: initializedDatasourceStates,
+    indexPatterns,
+  });
 
   return {
     indexPatterns,
     indexPatternRefs,
     annotationGroups,
-    datasourceStates: initializedDatasourceStates,
-    visualizationState: initializeVisualization({
-      visualizationMap,
-      visualizationState,
-      datasourceStates,
-      references,
-      initialContext,
-      annotationGroups,
-    }),
+    datasourceStates: postProcessedState.datasourceStates,
+    visualizationState: postProcessedState.visualizationState,
   };
+}
+
+function postProcessLoadedState({
+  visualizationMap,
+  visualizationType,
+  visualizationState,
+  datasourceStates,
+  indexPatterns,
+}: {
+  visualizationMap: VisualizationMap;
+  visualizationType?: string | null;
+  visualizationState: unknown;
+  datasourceStates: DatasourceStates;
+  indexPatterns: IndexPatternMap;
+}) {
+  if (!visualizationType) {
+    return { visualizationState, datasourceStates };
+  }
+
+  const postProcessor = visualizationMap[visualizationType]?.postProcessLoadedState;
+  if (!postProcessor) {
+    return { visualizationState, datasourceStates };
+  }
+
+  return postProcessor({
+    visualizationState,
+    datasourceStates,
+    indexPatterns,
+  });
 }
 
 export function initializeVisualization({
@@ -469,8 +506,19 @@ export async function persistedStateToExpression(
     annotationGroups,
     references: [...references, ...(internalReferences || [])],
   });
+  const postProcessedState = postProcessLoadedState({
+    visualizationMap: visualizations,
+    visualizationType,
+    visualizationState: activeVisualizationState,
+    datasourceStates,
+    indexPatterns,
+  });
 
-  const datasourceLayers = getDatasourceLayers(datasourceStates, datasourceMap, indexPatterns);
+  const datasourceLayers = getDatasourceLayers(
+    postProcessedState.datasourceStates,
+    datasourceMap,
+    indexPatterns
+  );
 
   const datasourceId = getActiveDatasourceIdFromDoc(doc);
   if (datasourceId == null) {
@@ -478,7 +526,7 @@ export async function persistedStateToExpression(
       ast: null,
       indexPatterns,
       indexPatternRefs,
-      activeVisualizationState,
+      activeVisualizationState: postProcessedState.visualizationState,
       activeDatasourceState: null,
     };
   }
@@ -490,17 +538,17 @@ export async function persistedStateToExpression(
       title,
       description,
       visualization,
-      visualizationState: activeVisualizationState,
+      visualizationState: postProcessedState.visualizationState,
       datasourceMap,
-      datasourceStates,
+      datasourceStates: postProcessedState.datasourceStates,
       datasourceLayers,
       indexPatterns,
       dateRange: { fromDate: currentTimeRange.from, toDate: currentTimeRange.to },
       forceDSL: services.forceDSL,
       nowInstant: services.nowProvider.get(),
     }),
-    activeVisualizationState,
-    activeDatasourceState: datasourceStates[datasourceId]?.state,
+    activeVisualizationState: postProcessedState.visualizationState,
+    activeDatasourceState: postProcessedState.datasourceStates[datasourceId]?.state,
     indexPatterns,
     indexPatternRefs,
   };

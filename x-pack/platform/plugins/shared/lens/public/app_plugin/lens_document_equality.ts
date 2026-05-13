@@ -15,7 +15,7 @@ import type {
 } from '@kbn/lens-common';
 import { removePinnedFilters } from './save_modal_container';
 
-const removeNonSerializable = (obj: Parameters<JSON['stringify']>[0]) =>
+const removeNonSerializable = (obj: Parameters<JSON['stringify']>[0]): LensDocument =>
   JSON.parse(JSON.stringify(obj));
 
 export const isLensEqual = (
@@ -31,8 +31,17 @@ export const isLensEqual = (
   }
 
   // we do this so that undefined props are the same as non-existant props
-  const doc1 = removeNonSerializable(doc1In);
-  const doc2 = removeNonSerializable(doc2In);
+  const visualizationType = doc1In.visualizationType;
+  // Visualization type specific normalization
+  const normalizeForEquality = visualizationType
+    ? visualizationMap[visualizationType]?.normalizeForEquality
+    : undefined;
+  const doc1 = normalizeForEquality
+    ? normalizeForEquality(removeNonSerializable(doc1In))
+    : removeNonSerializable(doc1In);
+  const doc2 = normalizeForEquality
+    ? normalizeForEquality(removeNonSerializable(doc2In))
+    : removeNonSerializable(doc2In);
 
   if (doc1?.visualizationType !== doc2?.visualizationType) {
     return false;
@@ -42,7 +51,11 @@ export const isLensEqual = (
     return false;
   }
 
-  const isEqualFromVis = visualizationMap[doc1.visualizationType]?.isEqual;
+  if (!visualizationType) {
+    return false;
+  }
+
+  const isEqualFromVis = visualizationMap[visualizationType]?.isEqual;
   const visualizationStateIsEqual = isEqualFromVis
     ? (() => {
         try {

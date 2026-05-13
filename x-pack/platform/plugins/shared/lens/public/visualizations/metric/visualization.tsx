@@ -50,6 +50,10 @@ import { getAccessorType } from '../../shared_components';
 import { MetricAppearanceSettings } from './toolbar';
 import { FlyoutToolbar } from '../../shared_components/flyout_toolbar';
 import { getColumnFromActiveData } from '../utils';
+import {
+  normalizeMetricDocumentForEquality,
+  postProcessMetricLoadedState,
+} from './state_post_processing';
 
 export const DEFAULT_MAX_COLUMNS = 3;
 
@@ -642,6 +646,15 @@ export const getMetricVisualization = ({
 
     return { state: cleanupMetricState(state, datasourceLayer), references: [] };
   },
+
+  postProcessLoadedState: ({ visualizationState, datasourceStates, indexPatterns }) =>
+    postProcessMetricLoadedState({
+      visualizationState,
+      datasourceStates,
+      indexPatterns,
+    }),
+
+  normalizeForEquality: (doc) => normalizeMetricDocumentForEquality(doc),
 
   setDimension({ prevState, columnId, groupId }) {
     const updated = { ...prevState };

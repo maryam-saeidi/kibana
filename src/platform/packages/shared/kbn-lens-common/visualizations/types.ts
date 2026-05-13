@@ -73,7 +73,10 @@ import type {
   VisualizeEditorContext,
   Suggestion,
   UserMessage,
+  IndexPatternMap,
+  LensDocument,
 } from '../types';
+import type { DatasourceStates } from '../datasources/types';
 import type {
   LENS_EDIT_PAGESIZE_ACTION,
   LENS_EDIT_RESIZE_ACTION,
@@ -229,6 +232,15 @@ export interface Visualization<T = unknown, P = T, ExtraAppendLayerArg = unknown
       annotationGroups?: AnnotationGroups,
       references?: Reference[]
     ): T;
+  };
+
+  postProcessLoadedState?: (state: {
+    visualizationState: T;
+    datasourceStates: DatasourceStates;
+    indexPatterns: IndexPatternMap;
+  }) => {
+    visualizationState: T;
+    datasourceStates: DatasourceStates;
   };
 
   convertToRuntimeState?: (state: T, datasourceStates?: Record<string, unknown>) => T;
@@ -526,6 +538,8 @@ export interface Visualization<T = unknown, P = T, ExtraAppendLayerArg = unknown
     references2: Reference[],
     annotationGroups: AnnotationGroups
   ) => boolean;
+
+  normalizeForEquality?: (doc: LensDocument) => LensDocument;
 
   getVisualizationInfo?: (state: T, frame?: FramePublicAPI) => VisualizationInfo;
   /**

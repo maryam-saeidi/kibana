@@ -73,6 +73,71 @@ describe('Initializing the store', () => {
     expect(deps.visualizationMap.testVis2.initialize).not.toHaveBeenCalled();
   });
 
+  it('applies visualization post processing during initialization', async () => {
+    const services = makeDefaultServices();
+    services.attributeService.loadFromLibrary = jest.fn().mockResolvedValue({
+      attributes: {
+        exactMatchDoc,
+        visualizationType: 'testVis',
+        title: '',
+        state: {
+          datasourceStates: {
+            formBased: {},
+          },
+          visualization: {},
+          query: { query: '', language: 'lucene' },
+          filters: [],
+        },
+        references: [],
+      },
+    });
+
+    const postProcessLoadedState = jest.fn(({ visualizationState, datasourceStates }) => ({
+      visualizationState: `${visualizationState} post processed`,
+      datasourceStates: {
+        ...datasourceStates,
+        formBased: {
+          ...datasourceStates.formBased,
+          state: { postProcessed: true },
+        },
+      },
+    }));
+
+    const storeDeps = mockStoreDeps({
+      lensServices: services,
+      visualizationMap: {
+        testVis: {
+          ...createMockVisualization(),
+          id: 'testVis',
+          postProcessLoadedState,
+          visualizationTypes: [
+            {
+              icon: 'empty',
+              id: 'testVis',
+              label: faker.lorem.word(),
+              sortPriority: 1,
+              description: faker.lorem.sentence(),
+            },
+          ],
+        },
+      },
+      datasourceMap: {
+        formBased: createMockDatasource('formBased'),
+      },
+    });
+
+    const { store } = makeLensStore({
+      storeDeps,
+      preloadedState,
+    });
+
+    await loadInitialAppState(store, defaultProps);
+
+    expect(postProcessLoadedState).toHaveBeenCalled();
+    expect(store.getState().lens.visualization.state).toBe('testVis initial state post processed');
+    expect(store.getState().lens.datasourceStates.formBased.state).toEqual({ postProcessed: true });
+  });
+
   it('should initialize all datasources with state from doc', async () => {
     const datasource1State = { datasource1: '' };
     const datasource2State = { datasource2: '' };
