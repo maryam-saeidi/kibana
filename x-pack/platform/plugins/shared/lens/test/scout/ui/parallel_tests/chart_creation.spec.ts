@@ -1,0 +1,132 @@
+/*
+ * Copyright Elasticsearch B.V. and/or licensed to Elasticsearch B.V. under one
+ * or more contributor license agreements. Licensed under the Elastic License
+ * 2.0; you may not use this file except in compliance with the Elastic License
+ * 2.0.
+ */
+
+import { spaceTest, tags } from '@kbn/scout';
+import { expect } from '@kbn/scout/ui';
+import { testData } from '../fixtures';
+
+const NEW_CHART_TITLE = 'A fancy lens test';
+
+spaceTest.describe('Lens chart creation', { tag: tags.stateful.classic }, () => {
+  spaceTest.beforeAll(async ({ scoutSpace, kbnClient }) => {
+    await scoutSpace.uiSettings.set({
+      defaultIndex: testData.DATA_VIEW_ID.LOGSTASH,
+      'dateFormat:tz': 'UTC',
+      'timepicker:timeDefaults': JSON.stringify({
+        from: testData.LOGSTASH_IN_RANGE_DATES.from,
+        to: testData.LOGSTASH_IN_RANGE_DATES.to,
+      }),
+    });
+    await kbnClient.importExport.load(testData.KBN_ARCHIVE_PATHS.LENS_BASIC, {
+      space: scoutSpace.id,
+    });
+  });
+
+  spaceTest.beforeEach(async ({ browserAuth }) => {
+    await browserAuth.loginAsPrivilegedUser();
+  });
+
+  spaceTest.afterAll(async ({ scoutSpace }) => {
+    await scoutSpace.uiSettings.unset('defaultIndex', 'dateFormat:tz', 'timepicker:timeDefaults');
+    await scoutSpace.savedObjects.cleanStandardList();
+  });
+
+  spaceTest(
+    'creates and saves an XY area chart, then reopens it with the same configuration',
+    async ({ page, pageObjects }) => {
+      const { lens, visualize } = pageObjects;
+
+      await spaceTest.step('open a new Lens editor', async () => {
+        await visualize.goto();
+        await visualize.openNewVisualizationWizard();
+        await visualize.clickVisType('lens');
+        await lens.waitForLensApp();
+      });
+
+      await spaceTest.step('configure an area chart with a top-values split on `ip`', async () => {
+        await lens.switchToVisualization('area');
+        await lens.configureDimension({
+          dimension: 'lnsXY_xDimensionPanel > lns-empty-dimension',
+          operation: 'date_histogram',
+          field: '@timestamp',
+        });
+        await lens.configureDimension({
+          dimension: 'lnsXY_yDimensionPanel > lns-empty-dimension',
+          operation: 'average',
+          field: 'bytes',
+        });
+        await lens.configureDimension({
+          dimension: 'lnsXY_splitDimensionPanel > lns-empty-dimension',
+          operation: 'terms',
+          field: 'ip',
+        });
+      });
+
+      await spaceTest.step('save the visualization to the library', async () => {
+        await lens.save(NEW_CHART_TITLE, { addToDashboard: 'none' });
+      });
+
+      const savedId = await spaceTest.step(
+        'read the saved-object id from the editor URL',
+        async () => {
+          const url = new URL(page.url());
+          const match = url.hash.match(/^#\/edit\/([^/?]+)/);
+          if (!match) {
+            throw new Error(`Could not extract saved-object id from URL: ${page.url()}`);
+          }
+          return match[1];
+        }
+      );
+
+      await spaceTest.step(
+        'reopen the saved chart directly and verify title and legend',
+        async () => {
+          await lens.openEditor(savedId, 'xyVisChart');
+          expect(await lens.getChartTitle()).toBe(NEW_CHART_TITLE);
+          // `.echLegendItem` is the only stable selector for xy legend items — elastic-charts
+          // does not expose a `data-test-subj`. Terms uses DEFAULT_SIZE=9, plus "Other" = 10.
+          await expect(page.locator('.echLegendItem')).toHaveCount(10);
+        }
+      );
+    }
+  );
+
+  spaceTest(
+    'preserves the split field when switching a saved XY chart to filters aggregation',
+    async ({ page, pageObjects }) => {
+      const { lens } = pageObjects;
+
+      await lens.openEditor(testData.LENS_BASIC_FIXTURE_IDS.XY_VIS, 'xyVisChart');
+
+      await lens.configureDimension({
+        dimension: 'lnsXY_splitDimensionPanel > lns-dimensionTrigger',
+        operation: 'filters',
+        keepOpen: true,
+      });
+      await lens.addFilterToAgg('geo.src : CN');
+      await lens.waitForVisualization('xyVisChart');
+
+      // The previous split (`terms of ip`) should be preserved as the first auto-generated
+      // filter, alongside the newly added one.
+      expect(await lens.getFiltersAggLabels()).toStrictEqual([`"ip" : *`, `geo.src : CN`]);
+      await expect(page.locator('.echLegendItem')).toHaveCount(2);
+    }
+  );
+
+  spaceTest('switches the first layer to a different data view', async ({ pageObjects }) => {
+    const { lens, visualize } = pageObjects;
+
+    await visualize.goto();
+    await visualize.openNewVisualizationWizard();
+    await visualize.clickVisType('lens');
+    await lens.waitForLensApp();
+
+    await lens.switchLayerIndexPattern(testData.DATA_VIEW_ID.LOGSTASH_WILDCARD);
+
+    expect(await lens.getSelectedLayerIndexPattern()).toBe(testData.DATA_VIEW_ID.LOGSTASH_WILDCARD);
+  });
+});

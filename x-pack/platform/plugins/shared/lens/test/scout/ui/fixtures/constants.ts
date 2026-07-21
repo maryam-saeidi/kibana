@@ -7,6 +7,7 @@
 
 const LENS_SCOUT_FIXTURES_DIR = 'x-pack/platform/plugins/shared/lens/test/scout/ui/fixtures';
 const OPEN_IN_LENS_KBN_ARCHIVES_DIR = `${LENS_SCOUT_FIXTURES_DIR}/kbn_archives/open_in_lens`;
+const LENS_SHARED_FIXTURES_DIR = 'x-pack/platform/test/functional/fixtures/kbn_archives/lens';
 
 export const ES_ARCHIVE_PATHS = {
   LOGSTASH: 'x-pack/platform/test/fixtures/es_archives/logstash_functional',
@@ -14,6 +15,22 @@ export const ES_ARCHIVE_PATHS = {
 
 export const DATA_VIEW_ID = {
   LOGSTASH: 'logstash-*',
+  /** Wildcard data view bundled with `lens_basic.json`; matches `logstash-*` indices. */
+  LOGSTASH_WILDCARD: 'log*',
+} as const;
+
+/**
+ * Saved-object ids of the visualizations bundled in `lens_basic.json`. Use with
+ * `lens.openEditor(id, chartTestSubj)` to jump directly to a fixture-loaded chart
+ * without navigating through the visualize listing page.
+ */
+export const LENS_BASIC_FIXTURE_IDS = {
+  /** Legacy Lens metric (`lnsLegacyMetric`), title: `Artistpreviouslyknownaslens`. */
+  ARTIST_METRIC: '76fc4200-cf44-11e9-b933-fd84270f3ac1',
+  /** XY chart, title: `lnsXYvis`. Split by top-3 values of `ip`, y = average of `bytes`. */
+  XY_VIS: '76fc4200-cf44-11e9-b933-fd84270f3ac2',
+  /** Pie chart, title: `lnsPieVis`. */
+  PIE_VIS: '9536bed0-d57e-11ea-b169-e3a222a76b9c',
 } as const;
 
 export const LOGSTASH_IN_RANGE_DATES = {
@@ -23,6 +40,11 @@ export const LOGSTASH_IN_RANGE_DATES = {
 
 export const KBN_ARCHIVE_PATHS = {
   ESQL_CONVERSION_DASHBOARD: `${LENS_SCOUT_FIXTURES_DIR}/esql_conversion_dashboard.json`,
+  /**
+   * Ships the `logstash-*` and `log*` data views plus the three visualizations referenced by
+   * {@link LENS_BASIC_FIXTURE_IDS}. Shared with the FTR Lens smokescreen; do not duplicate.
+   */
+  LENS_BASIC: `${LENS_SHARED_FIXTURES_DIR}/lens_basic.json`,
   OPEN_IN_LENS: {
     TSVB: {
       METRIC: `${OPEN_IN_LENS_KBN_ARCHIVES_DIR}/tsvb/metric.json`,
