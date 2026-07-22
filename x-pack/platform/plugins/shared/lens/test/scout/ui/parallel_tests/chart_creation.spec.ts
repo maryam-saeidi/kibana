@@ -77,28 +77,16 @@ spaceTest.describe('Lens chart creation', { tag: tags.stateful.classic }, () => 
         await lens.save(NEW_CHART_TITLE, { addToDashboard: 'none' });
       });
 
-      const savedId = await spaceTest.step(
-        'read the saved-object id from the editor URL',
-        async () => {
-          const url = new URL(page.url());
-          const match = url.hash.match(/^#\/edit\/([^/?]+)/);
-          if (!match) {
-            throw new Error(`Could not extract saved-object id from URL: ${page.url()}`);
-          }
-          return match[1];
-        }
-      );
-
-      await spaceTest.step(
-        'reopen the saved chart directly and verify title and legend',
-        async () => {
-          await lens.openEditor(savedId, 'xyVisChart');
-          expect(await lens.getChartTitle()).toBe(NEW_CHART_TITLE);
-          // `.echLegendItem` is the only stable selector for xy legend items — elastic-charts
-          // does not expose a `data-test-subj`. Terms uses DEFAULT_SIZE=9, plus "Other" = 10.
-          await expect(page.locator('.echLegendItem')).toHaveCount(10);
-        }
-      );
+      await spaceTest.step('go to the saved chart and verify title and legend', async () => {
+        // Ensure the visualization shows up in the visualize list, and takes
+        // us back to the visualization as we configured it.
+        await visualize.goto();
+        await visualize.openSavedVisualization(NEW_CHART_TITLE, 'xyVisChart');
+        expect(await lens.getChartTitle()).toBe(NEW_CHART_TITLE);
+        // `.echLegendItem` is the only stable selector for xy legend items — elastic-charts
+        // does not expose a `data-test-subj`. Terms uses DEFAULT_SIZE=9, plus "Other" = 10.
+        await expect(page.locator('.echLegendItem')).toHaveCount(10);
+      });
     }
   );
 

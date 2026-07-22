@@ -74,9 +74,13 @@ export class VisualizeApp {
     });
   }
 
-  async openSavedVisualization(title: string) {
+  async openSavedVisualization(title: string, lensChartSubj?: string) {
     await this.page.testSubj.click(`visListingTitleLink-${title.split(' ').join('-')}`);
-    await this.waitForVisualizationLoaded();
+    if (lensChartSubj) {
+      await this.page.testSubj.locator(lensChartSubj).waitFor({ state: 'visible' });
+    } else {
+      await this.waitForVisualizationLoaded();
+    }
   }
 
   async openSaveModal() {
