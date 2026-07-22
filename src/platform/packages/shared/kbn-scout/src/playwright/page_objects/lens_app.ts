@@ -55,6 +55,18 @@ export class LensApp {
   }
 
   /**
+   * Navigates directly to a new Lens editor, bypassing the visualize listing page
+   * and the "New visualization" wizard. Prefer this over
+   * `visualize.goto() -> openNewVisualizationWizard() -> clickVisType('lens')` when
+   * the test builds a chart from scratch. Avoids the 10s timeout on the visualize
+   * landing page that can flake on a cold Kibana boot.
+   */
+  async openNewEditor() {
+    await this.page.gotoApp('lens');
+    await this.waitForLensApp();
+  }
+
+  /**
    * Navigates directly to the Lens editor for a saved visualization and waits for its
    * chart to render. Prefer this over going through the visualize listing page when the
    * saved-object id is known (e.g. fixture-loaded or freshly-saved visualizations).

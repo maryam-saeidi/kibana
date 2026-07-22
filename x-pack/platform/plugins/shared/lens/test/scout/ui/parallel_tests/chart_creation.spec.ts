@@ -8,22 +8,29 @@
 import { spaceTest, tags } from '@kbn/scout';
 import { expect } from '@kbn/scout/ui';
 import { testData } from '../fixtures';
+import type { ImportedSavedObject } from '../fixtures/open_in_lens_helpers';
 
 const NEW_CHART_TITLE = 'A fancy lens test';
 
+/** Resolves the new ID of an imported Lens visualization by its fixture title. */
+const getImportedLensId = (imported: ImportedSavedObject[], title: string): string => {
+  const so = imported.find((s) => s.type === 'lens' && s.title === title);
+  if (!so?.id) {
+    throw new Error(`Lens visualization "${title}" was not imported`);
+  }
+  return so.id;
+};
+
 spaceTest.describe('Lens chart creation', { tag: tags.stateful.classic }, () => {
-  spaceTest.beforeAll(async ({ scoutSpace, kbnClient }) => {
-    await scoutSpace.uiSettings.set({
-      defaultIndex: testData.DATA_VIEW_ID.LOGSTASH,
-      'dateFormat:tz': 'UTC',
-      'timepicker:timeDefaults': JSON.stringify({
-        from: testData.LOGSTASH_IN_RANGE_DATES.from,
-        to: testData.LOGSTASH_IN_RANGE_DATES.to,
-      }),
-    });
-    await kbnClient.importExport.load(testData.KBN_ARCHIVE_PATHS.LENS_BASIC, {
-      space: scoutSpace.id,
-    });
+  let xyVisId: string;
+
+  spaceTest.beforeAll(async ({ scoutSpace }) => {
+    const imported = await scoutSpace.savedObjects.load(testData.KBN_ARCHIVE_PATHS.LENS_BASIC);
+    xyVisId = getImportedLensId(imported, testData.LENS_BASIC_TITLES.XY_VIS);
+
+    await scoutSpace.uiSettings.setDefaultIndex(testData.DATA_VIEW_ID.LOGSTASH);
+    await scoutSpace.uiSettings.setDefaultTime(testData.LOGSTASH_IN_RANGE_DATES);
+    await scoutSpace.uiSettings.set({ 'dateFormat:tz': 'UTC' });
   });
 
   spaceTest.beforeEach(async ({ browserAuth }) => {
@@ -100,7 +107,7 @@ spaceTest.describe('Lens chart creation', { tag: tags.stateful.classic }, () => 
     async ({ page, pageObjects }) => {
       const { lens } = pageObjects;
 
-      await lens.openEditor(testData.LENS_BASIC_FIXTURE_IDS.XY_VIS, 'xyVisChart');
+      await lens.openEditor(xyVisId, 'xyVisChart');
 
       await lens.configureDimension({
         dimension: 'lnsXY_splitDimensionPanel > lns-dimensionTrigger',
@@ -118,12 +125,9 @@ spaceTest.describe('Lens chart creation', { tag: tags.stateful.classic }, () => 
   );
 
   spaceTest('switches the first layer to a different data view', async ({ pageObjects }) => {
-    const { lens, visualize } = pageObjects;
+    const { lens } = pageObjects;
 
-    await visualize.goto();
-    await visualize.openNewVisualizationWizard();
-    await visualize.clickVisType('lens');
-    await lens.waitForLensApp();
+    await lens.openNewEditor();
 
     await lens.switchLayerIndexPattern(testData.DATA_VIEW_ID.LOGSTASH_WILDCARD);
 
