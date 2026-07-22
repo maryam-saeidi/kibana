@@ -105,7 +105,7 @@ spaceTest.describe('Lens ESQL dashboard inline editing', { tag: tags.stateful.cl
         await expect(page.testSubj.locator('lnsChartSwitchPopover')).toHaveText('Line');
 
         // change the color to red
-        await page.testSubj.click('lnsXY_yDimensionPanel');
+        await page.testSubj.click('lnsXY_yDimensionPanel > lns-dimensionTrigger-textBased');
         const colorPickerInput = page.getByTestId(/indexPattern-dimension-colorPicker/);
         await colorPickerInput.fill('');
         await colorPickerInput.fill('#ff0000');
@@ -130,7 +130,7 @@ spaceTest.describe('Lens ESQL dashboard inline editing', { tag: tags.stateful.cl
 
           await expect(page.testSubj.locator('lnsChartSwitchPopover')).toHaveText('Line');
 
-          await page.testSubj.click('lnsXY_yDimensionPanel');
+          await page.testSubj.click('lnsXY_yDimensionPanel > lns-dimensionTrigger-textBased');
           const colorPickerInput = page.getByTestId(/indexPattern-dimension-colorPicker/);
           await expect(colorPickerInput).toHaveValue('#FF0000');
         }
