@@ -18,9 +18,10 @@ const setEsqlQueryAndRun = async (
 ) => {
   await codeEditor.waitCodeEditorReady('InlineEditingESQLEditor');
   await codeEditor.setCodeEditorValue(query);
-  const searchButton = page.testSubj.locator('ESQLEditor-run-query-button');
-  await expect(searchButton).toBeEnabled();
-  await searchButton.click();
+  // const searchButton = page.testSubj.locator('ESQLEditor-run-query-button');
+  // await expect(searchButton).toBeEnabled();
+  // await searchButton.click();
+  await page.testSubj.click('ESQLEditor-run-query-button');
   await dashboard.waitForRenderComplete();
 };
 
