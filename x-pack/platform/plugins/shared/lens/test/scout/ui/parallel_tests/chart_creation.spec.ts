@@ -56,21 +56,7 @@ spaceTest.describe('Lens chart creation', { tag: tags.stateful.classic }, () => 
 
       await spaceTest.step('configure an area chart with a top-values split on `ip`', async () => {
         await lens.switchToVisualization('area');
-        await lens.configureDimension({
-          dimension: 'lnsXY_xDimensionPanel > lns-empty-dimension',
-          operation: 'date_histogram',
-          field: '@timestamp',
-        });
-        await lens.configureDimension({
-          dimension: 'lnsXY_yDimensionPanel > lns-empty-dimension',
-          operation: 'average',
-          field: 'bytes',
-        });
-        await lens.configureDimension({
-          dimension: 'lnsXY_splitDimensionPanel > lns-empty-dimension',
-          operation: 'terms',
-          field: 'ip',
-        });
+        await lens.configureXYDimensions();
       });
 
       await spaceTest.step('save the visualization to the library', async () => {
@@ -81,7 +67,8 @@ spaceTest.describe('Lens chart creation', { tag: tags.stateful.classic }, () => 
         // Ensure the visualization shows up in the visualize list, and takes
         // us back to the visualization as we configured it.
         await visualize.goto();
-        await visualize.openSavedVisualization(NEW_CHART_TITLE, 'xyVisChart');
+        await visualize.clickSavedVisualization(NEW_CHART_TITLE);
+        await lens.waitForVisualization('xyVisChart');
         expect(await lens.getChartTitle()).toBe(NEW_CHART_TITLE);
         // `.echLegendItem` is the only stable selector for xy legend items — elastic-charts
         // does not expose a `data-test-subj`. Terms uses DEFAULT_SIZE=9, plus "Other" = 10.
@@ -115,7 +102,7 @@ spaceTest.describe('Lens chart creation', { tag: tags.stateful.classic }, () => 
   spaceTest('switches the first layer to a different data view', async ({ pageObjects }) => {
     const { lens } = pageObjects;
 
-    await lens.openNewEditor();
+    await lens.openFullEditor();
 
     await lens.switchLayerIndexPattern(testData.DATA_VIEW_ID.LOGSTASH_WILDCARD);
 
