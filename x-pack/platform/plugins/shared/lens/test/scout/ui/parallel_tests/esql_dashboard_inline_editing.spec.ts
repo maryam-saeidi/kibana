@@ -96,6 +96,7 @@ spaceTest.describe('Lens ESQL dashboard inline editing', { tag: tags.stateful.cl
 
       await spaceTest.step('create a line chart panel with a red Y-axis color', async () => {
         await lens.switchToVisualization('line', { search: 'Line' });
+        await dashboard.waitForPanelsToLoad(1);
 
         await setEsqlQueryAndRun(
           dashboard,
