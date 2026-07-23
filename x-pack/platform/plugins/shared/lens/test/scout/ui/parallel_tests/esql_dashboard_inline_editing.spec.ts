@@ -93,6 +93,8 @@ spaceTest.describe('Lens ESQL dashboard inline editing', { tag: tags.stateful.cl
       const codeEditor = new KibanaCodeEditorWrapper(page);
 
       await spaceTest.step('create a line chart panel with a red Y-axis color', async () => {
+        await lens.switchToVisualization('line', { search: 'Line' });
+
         await setEsqlQueryAndRun(
           dashboard,
           page,
@@ -100,8 +102,10 @@ spaceTest.describe('Lens ESQL dashboard inline editing', { tag: tags.stateful.cl
           'from logstash-* | stats maxB = max(bytes) by geo.dest'
         );
 
-        // change to line chart
-        await lens.switchToVisualization('line');
+        const splitTriggers = page.testSubj.locator(
+          'lnsXY_splitDimensionPanel > lns-dimensionTrigger'
+        );
+        await expect(splitTriggers).toHaveCount(0);
         await expect(page.testSubj.locator('lnsChartSwitchPopover')).toHaveText('Line');
 
         // change the color to red
